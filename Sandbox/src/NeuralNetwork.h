@@ -2,6 +2,15 @@
 #include <iostream>
 #include "Eigen/Dense"
 
+/*
+    Structure consists of 3 main classes:
+    Networks, which consist of Layers
+    Layers, which consist of Neurons
+    Neurons, which do math (sigmoid activation)
+
+*/
+
+
 //Sigmoid neuron 
 class Neuron{
     public:
@@ -11,7 +20,7 @@ class Neuron{
         }
 
         //Uses sigmoid function
-        inline float getOutput(const Eigen::VectorXd& inputs) const{
+        float getActivation(const Eigen::VectorXd& inputs) const{
             double weightedSum = 0;
             for (int i = 0; i < inputs.rows(); i++){
                 weightedSum += inputs(i) * m_weights(i);
@@ -22,16 +31,18 @@ class Neuron{
         Eigen::VectorXd m_weights;
         float bias = 0;
 
+    public:
+        //Maybe not the safest choice
+        Eigen::VectorXd& getWeights(){
+            return m_weights;
+        }
       
 };
 
 class Layer{
-    private:
-        std::vector<Neuron> m_neurons;
-
     public:
-        //Input count is the previous layers' neuron count
-        Layer(int neuronCount, int inputCount) {
+        //(#inputs, #outputs)
+        Layer(int inputCount, int neuronCount) {
             for (int i = 0; i < neuronCount; i++){
                 m_neurons.push_back(Neuron(inputCount));
             }
@@ -42,48 +53,53 @@ class Layer{
             Eigen::VectorXd outputs(m_neurons.size());
             //Feed each neuron the previous layers' outputs
             for (int i = 0; i < m_neurons.size(); i++){
-                outputs(i) = m_neurons[i].getOutput(input);
+                outputs(i) = m_neurons[i].getActivation(input);
             }
             return outputs;
         }
+
+
+    private:
+        std::vector<Neuron> m_neurons;
 
     public:
         int getNeuronCount() const{
             return m_neurons.size();
         }
 
-    
 };
 
 class Network{
     public:
 
-        Network(const Eigen::VectorXd& inputs) : m_inputs(inputs){}
+        Network(const Eigen::VectorXd& inputs, const Eigen::VectorXd& targets) : m_inputs(inputs), m_targets(targets){}
 
         Eigen::VectorXd feedForward(){
             auto inputs = m_inputs;
             for(int i = 0; i < m_hiddenLayers.size(); i++){
                 inputs = m_hiddenLayers[i].getOutputs(inputs);
             }
-
             return inputs;
         };
+
 
         void push_back(Layer& layer)
         {
             m_hiddenLayers.push_back(layer);
         }
 
+        void learn(double learningRate, int epochs);
+
+
+
     private: 
         const Eigen::VectorXd& m_inputs;
+        const Eigen::VectorXd& m_targets;
         std::vector<Layer> m_hiddenLayers;
+
+        void propagateBackwards() { }
+        void stochasticGradientDescent() {}
 };
-
-
-
-
-
-
 
 
 

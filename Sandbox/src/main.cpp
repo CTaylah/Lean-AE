@@ -35,10 +35,13 @@ int main()
         imageVector(i) = image[i];
     }
 
-    Network network(imageVector);
-    Layer layer1(16, 784);
+    Eigen::VectorXd target(10);
+    Network network(imageVector, target);
+
+    //(#inputs, #outputs)
+    Layer layer1(784, 16);
     Layer layer2(16, 16);
-    Layer layer3(10, 16);
+    Layer layer3(16, 10);
     network.push_back(layer1);
     network.push_back(layer2);
     network.push_back(layer3);
@@ -46,7 +49,6 @@ int main()
     auto output = network.feedForward();
 
     std::cout << output << std::endl;
-
 
 
     return 0;
