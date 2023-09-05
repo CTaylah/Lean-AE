@@ -9,9 +9,9 @@
 using Eigen::MatrixXd; 
 using Eigen::VectorXd;
 
-void readMNISTImage(std::vector<int>& image);
+void readMNISTImage(std::vector<int>& pixelData);
 
-void readMINSTLabel(int& label);
+void readMINSTLabel(std::vector<int>& label);
 
 void printImage(const std::vector<int>& image);
 
@@ -20,40 +20,64 @@ void printImage(const std::vector<int>& image);
 int main()
 {
     srand(time(NULL));
-    std::vector<int> image;
-    readMNISTImage(image);
-    
-    int imageLabel = 0;
-    readMINSTLabel(imageLabel);
 
-    Eigen::VectorXd imageVector(image.size());
+    std::vector<int> pixelData;
+    readMNISTImage(pixelData);
+    std::cout << pixelData.size() << std::endl;
 
-    imageVector = imageVector / 255.0;
+    std::vector<Eigen::VectorXd> images;
 
-    for(int i = 0; i < image.size(); i++)
+    for(int i = 0; i < pixelData.size(); i+=784)
     {
-        imageVector(i) = image[i];
+        Eigen::VectorXd imageVector(784);
+        for(int j = 0; j < 784; j++)
+        {
+            imageVector(j) = pixelData[i+j];
+        }
+        images.push_back(imageVector);
     }
 
-    Eigen::VectorXd target(10);
-    Network network(imageVector, target);
+     
+    std::vector<int> labels;
+    readMINSTLabel(labels);
 
-    //(#inputs, #outputs)
+    std::vector<Eigen::VectorXd> labelVectors;
+    for(int i = 0; i < labels.size(); i++)
+    {
+        Eigen::VectorXd labelVector(10);
+        for(int j = 0; j < 10; j++)
+        {
+            if(labels[i] == j)
+            {
+                labelVector(j) = 1;
+            }
+            else
+            {
+                labelVector(j) = 0;
+            }
+        }
+        labelVectors.push_back(labelVector);
+    }
+
+
     Layer layer1(784, 16);
     Layer layer2(16, 16);
-    Layer layer3(16, 10);
+    Layer layer3(16, 16);
+    Layer layer4(16, 10);
+
+    Network network;
     network.push_back(layer1);
     network.push_back(layer2);
     network.push_back(layer3);
+    network.push_back(layer4);
+    
+    network.learn(0.1, 35, 400, labelVectors, images);
 
-    auto output = network.feedForward();
-
-    std::cout << output << std::endl;
 
 
     return 0;
 
- }
+}
 
 
 
@@ -71,12 +95,11 @@ void readMNISTImage(std::vector<int>& image)
     file.read((char*)&magicNumber, sizeof(magicNumber));
     magicNumber = __builtin_bswap32(magicNumber);
 
-    //Read number of images
+//    Read number of images
     int numImages = 0;
     file.read((char*)&numImages, sizeof(numImages));
     numImages = __builtin_bswap32(numImages);
 
-    numImages = 1;
 
     //Read number of rows
     int numRows = 0;
@@ -104,7 +127,7 @@ void readMNISTImage(std::vector<int>& image)
     }
 }
 
-void readMINSTLabel(int& label){
+void readMINSTLabel(std::vector<int>& label){
     std::ifstream file("MNIST/training_labels/train-labels.idx1-ubyte", std::ios::binary);
 
     if(!file){
@@ -117,18 +140,16 @@ void readMINSTLabel(int& label){
     file.read((char*)&magicNumber, sizeof(magicNumber));
     magicNumber = __builtin_bswap32(magicNumber);
 
-    //Read number of images
-    int numImages = 0;
-    file.read((char*)&numImages, sizeof(numImages));
-    numImages = __builtin_bswap32(numImages);
-
-    numImages = 1;
+    //Read number of labels
+    int numLabels = 0;
+    file.read((char*)&numLabels, sizeof(numLabels));
+    numLabels = __builtin_bswap32(numLabels);
 
     //Read label data
-    for(int i = 0; i < numImages; i++){
+    for(int i = 0; i < numLabels; i++){
         unsigned char temp = 0;
         file.read((char*)&temp, sizeof(temp));
-        label = (int)temp;
+        label.push_back((int)temp);
     }
     if(file.fail()){
         std::cerr << "error while reading file" << std::endl;
@@ -136,11 +157,5 @@ void readMINSTLabel(int& label){
     }
 }
 
-void printImage(const std::vector<int>& image){
-    for(int i = 0; i < image.size(); i++){
-        std::cout << image[i] << "  ";
-        if(i % 28 == 0){
-            std::cout << std::endl;
-        }
-    }
-}
+   
+

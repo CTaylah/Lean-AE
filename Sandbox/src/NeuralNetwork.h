@@ -25,46 +25,107 @@ class Neuron{
             for (int i = 0; i < inputs.rows(); i++){
                 weightedSum += inputs(i) * m_weights(i);
             } 
-            return 1.0 / (1 + std::exp(weightedSum - bias));
+            m_weightedSum = weightedSum;
+            return 1.0 / (1 + std::exp(-(weightedSum - m_bias)));
         }
+
+        float getSigmoidDerivative() const{
+            double sigZ = 1.0/ (1 + std::exp(-m_weightedSum));
+            return sigZ * (1 - sigZ);
+        }
+
+    
+
     private:
         Eigen::VectorXd m_weights;
-        float bias = 0;
+        //IDK ABOUT THIS BUT ERROR WENT AWAY
+        mutable double m_weightedSum = 0;
+        double m_bias = 0;
 
     public:
-        //Maybe not the safest choice
-        Eigen::VectorXd& getWeights(){
+        const Eigen::VectorXd& getWeights(){
             return m_weights;
         }
+        void setWeights(const Eigen::VectorXd weights)
+        {
+            m_weights = weights;
+        }
+        void setWeight(int index, double weight)
+        {
+            m_weights(index) = weight;
+        }
+
+        double getBias() { return m_bias; }
+        void setBias(double bias) { m_bias = bias;}
+      
       
 };
 
 class Layer{
     public:
+        std::vector<Neuron> m_neurons;
         //(#inputs, #outputs)
         Layer(int inputCount, int neuronCount) {
+            
+            m_weightMatrix.resize(inputCount, neuronCount);
+
             for (int i = 0; i < neuronCount; i++){
                 m_neurons.push_back(Neuron(inputCount));
+                m_weightMatrix.col(i) = m_neurons[i].getWeights();
             }
         }
 
-        //Rename? Take inputs from previous layer to update neurons
-        Eigen::VectorXd getOutputs(const Eigen::VectorXd& input) const{
+        //Take inputs from previous layer to update neurons
+        Eigen::VectorXd getActivations(const Eigen::VectorXd& input) const{
             Eigen::VectorXd outputs(m_neurons.size());
             //Feed each neuron the previous layers' outputs
             for (int i = 0; i < m_neurons.size(); i++){
                 outputs(i) = m_neurons[i].getActivation(input);
             }
+            m_outputs = outputs;
             return outputs;
         }
 
+        void updateWeightMatrix(){
+            for (int i = 0; i < m_neurons.size(); i++){
+                m_weightMatrix.row(i) = m_neurons[i].getWeights();
+            }
+        }
+
+        Eigen::VectorXd getSigmoidDerivativeVector() const{
+            Eigen::VectorXd sigmoidDerivativeVector(m_neurons.size());
+            for (int i = 0; i < m_neurons.size(); i++){
+                sigmoidDerivativeVector(i) = m_neurons[i].getSigmoidDerivative();
+            }
+            return sigmoidDerivativeVector;
+        }
+ 
 
     private:
-        std::vector<Neuron> m_neurons;
+        //This should probably be a Map<Matrix>, but that's for another day
+        Eigen::MatrixXd m_weightMatrix;
+        //IDK ABOUT THIS BUT IT MADE SQUIGGLE GO AWAY
+        mutable Eigen::VectorXd m_outputs;
+
+        
 
     public:
         int getNeuronCount() const{
             return m_neurons.size();
+        }
+        
+        Eigen::MatrixXd getWeightMatrix()
+        {
+            return m_weightMatrix;
+        }
+
+        Eigen::VectorXd getOutputs(){
+            return m_outputs;
+        }
+
+
+        void printWeightMatrix(){
+            std::cout << m_weightMatrix << std::endl;
         }
 
 };
@@ -72,12 +133,12 @@ class Layer{
 class Network{
     public:
 
-        Network(const Eigen::VectorXd& inputs, const Eigen::VectorXd& targets) : m_inputs(inputs), m_targets(targets){}
+        Network() {}
 
-        Eigen::VectorXd feedForward(){
-            auto inputs = m_inputs;
-            for(int i = 0; i < m_hiddenLayers.size(); i++){
-                inputs = m_hiddenLayers[i].getOutputs(inputs);
+        Eigen::VectorXd feedForward(Eigen::VectorXd inputs){
+
+            for(int i = 0; i < m_layers.size(); i++){
+                inputs = m_layers[i].getActivations(inputs);
             }
             return inputs;
         };
@@ -85,20 +146,61 @@ class Network{
 
         void push_back(Layer& layer)
         {
-            m_hiddenLayers.push_back(layer);
+            m_layers.push_back(layer);
         }
 
-        void learn(double learningRate, int epochs);
+        void learn(double learningRate, int epochs, int examples, const std::vector<Eigen::VectorXd>& labels, const std::vector<Eigen::VectorXd>& inputs)
+        {
+            for (int epoch = 0; epoch < epochs; epoch++)
+            {
+                double cost = 0;
+                for (int example = 0; example < examples; example++)
+                {
+                    Eigen::VectorXd layerActivations = feedForward(inputs[example]);
+                    Eigen::VectorXd target = labels[example];
+
+                    double meanSquaredError = (layerActivations - target).squaredNorm();
+                    cost += meanSquaredError / 2;
+                    // LayerError for Layer L
+                    Eigen::VectorXd layerError = (layerActivations- target).cwiseProduct(m_layers.back().getSigmoidDerivativeVector());
+
+                    for(int i = m_layers.size() - 1; i > 0; i--){
+                        //For each neuron, calculate dC/dW
+                        for(int j = 0; j < m_layers[i].getNeuronCount(); j++)
+                        {
+                            Eigen::VectorXd previousActivations = m_layers[i-1].getOutputs();
+                            for(int k = 0; k < previousActivations.rows(); k++){
+                                double currentWeight = m_layers[i].m_neurons.at(j).getWeights()(k);
+                                double currentBias = m_layers[i].m_neurons.at(j).getBias();
+
+                                double dCdW = (learningRate) * (previousActivations(k) * layerError(j));
+                                double dCdB = learningRate * layerError(j);
+
+                                m_layers[i].m_neurons[j].setWeight(k,currentWeight - dCdW);
+                                m_layers[i].m_neurons[j].setBias(currentBias - dCdB);
+
+                                
+                            }
+                        }
+
+                        //Update to LayerError for L - i
+                        layerError = (m_layers[i].getWeightMatrix() * layerError).cwiseProduct(m_layers[i-1].getSigmoidDerivativeVector());
+                    }
+
+                }
+                cost = cost/examples;
+                std::cout << "Epoch: " << epoch << std::endl;
+                std::cout << "Cost: " << cost << std::endl;
+                
+            }
+            
+        }
 
 
 
     private: 
-        const Eigen::VectorXd& m_inputs;
-        const Eigen::VectorXd& m_targets;
-        std::vector<Layer> m_hiddenLayers;
+        std::vector<Layer> m_layers;
 
-        void propagateBackwards() { }
-        void stochasticGradientDescent() {}
 };
 
 
