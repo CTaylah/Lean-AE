@@ -16,10 +16,16 @@ void readMINSTLabel(std::vector<int>& label);
 void printImage(const std::vector<int>& image);
 
 
-
-int main()
+TEST(SillyTest, IsFourPositive)
 {
+    EXPECT_GT(4,5);
+}
+
+int main(int argc, char** argv)
+{
+    ::testing::InitGoogleTest(&argc, argv);
     srand(time(NULL));
+    return RUN_ALL_TESTS();
 
     std::vector<int> pixelData;
     readMNISTImage(pixelData);

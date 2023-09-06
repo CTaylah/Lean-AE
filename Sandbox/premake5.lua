@@ -9,11 +9,13 @@ project "Sandbox"
 
     includedirs 
     {
-        "%{wks.location}/vendor/"
+        "%{wks.location}/vendor/", "%{wks.location}/googletest/googletest/include/"
     }
 
     files { "**.h", "**.hpp", "**.c", "**.cpp"}
     
+    links {"googletest"}
+
     filter "configurations:Debug"
         defines { "DEBUG" }
         symbols "On"

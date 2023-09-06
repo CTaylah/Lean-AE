@@ -1,7 +1,11 @@
 #include <vector>
 #include <iostream>
 #include <numeric>
+
+#include "gtest/gtest.h"
+
 #include "Eigen/Dense"
+
 
 /*
     Structure consists of 3 main classes:
@@ -110,7 +114,6 @@ class Layer{
         Eigen::MatrixXd m_weightMatrix;
         //IDK ABOUT THIS BUT IT MADE SQUIGGLE GO AWAY
         mutable Eigen::VectorXd m_outputs;
-
         
 
     public:

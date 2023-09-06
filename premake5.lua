@@ -3,3 +3,4 @@ workspace "NeuralNetworks"
     includedirs { "vendor" }
 
 include "Sandbox"
+include "googletest"
