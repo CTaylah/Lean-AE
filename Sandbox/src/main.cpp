@@ -23,24 +23,24 @@ int main()
 
     std::vector<int> pixelData;
     readMNISTImage(pixelData);
-    std::cout << pixelData.size() << std::endl;
 
     std::vector<Eigen::VectorXd> images;
 
-    for(int i = 0; i < pixelData.size(); i+=784)
+    for(int i = 0; i < pixelData.size() / 100; i+=784)
     {
         Eigen::VectorXd imageVector(784);
         for(int j = 0; j < 784; j++)
         {
             imageVector(j) = pixelData[i+j];
         }
+        imageVector = imageVector / 255.0;
         images.push_back(imageVector);
     }
 
+    std::cout << images.size() << std::endl;
      
     std::vector<int> labels;
     readMINSTLabel(labels);
-
     std::vector<Eigen::VectorXd> labelVectors;
     for(int i = 0; i < labels.size(); i++)
     {
@@ -71,16 +71,55 @@ int main()
     network.push_back(layer3);
     network.push_back(layer4);
     
-    network.learn(0.1, 35, 400, labelVectors, images);
+    network.learn(0.2, 100, images.size(), labelVectors, images);
+{
+    // Network networkDebug;
+    // Layer inputLayer(2,2);
+    // Layer hiddenLayer(2,2);
+    // Layer outputLayer(2,2);
+
+    // networkDebug.push_back(inputLayer);
+    // networkDebug.push_back(hiddenLayer);
+    // networkDebug.push_back(outputLayer);
+
+    // std::vector<Eigen::VectorXd> debugLabels;
+    // std::vector<Eigen::VectorXd> debugExamples;
+    // Eigen::Vector2d debugExample(0.1, 0.5);
+    // Eigen::Vector2d debugLabel(0.5, 0.95);
 
 
+    // debugExamples.push_back(debugExample);
+    // debugLabels.push_back(debugLabel);
+    // debugExamples.push_back(debugExample);
 
+    // hiddenLayer.m_neurons[0].setWeight(0,0.1);
+    // hiddenLayer.m_neurons[0].setWeight(1,0.2);
+    // hiddenLayer.m_neurons[0].setBias(0.25);
+
+    // hiddenLayer.m_neurons[1].setWeight(0,0.3);
+    // hiddenLayer.m_neurons[1].setWeight(1,0.4);
+    // hiddenLayer.m_neurons[1].setBias(0.25);
+
+    
+    // outputLayer.m_neurons[0].setWeight(0,0.5);
+    // outputLayer.m_neurons[0].setWeight(1,0.6);
+    // outputLayer.m_neurons[0].setBias(0.35);
+
+    // outputLayer.m_neurons[1].setWeight(0,0.7);
+    // outputLayer.m_neurons[1].setWeight(1,0.8);
+    // outputLayer.m_neurons[1].setBias(0.35);
+    
+
+    // outputLayer.printWeightMatrix();
+    // networkDebug.learn(0.4, 100, 1, debugLabels, debugExamples);
+    // outputLayer.printWeightMatrix();
+}
     return 0;
 
 }
 
 
-
+//Generated with CoPilot
 void readMNISTImage(std::vector<int>& image)
 {
     std::ifstream file("MNIST/training_images/train-images.idx3-ubyte", std::ios::binary);
