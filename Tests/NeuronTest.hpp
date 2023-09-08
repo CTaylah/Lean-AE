@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include "Math.h"
+
 #define private public
 #include "Neuron.h"
 #undef private

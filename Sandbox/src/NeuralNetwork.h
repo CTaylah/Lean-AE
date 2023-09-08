@@ -23,9 +23,11 @@ class NeuralNetwork {
     public:
         NeuralNetwork(Topology topology); 
 
+        void FeedForward(const Eigen::VectorXd& input);
         
         ~NeuralNetwork() = default;
-        Eigen::VectorXd Prediction();
+
+        Eigen::VectorXd GetPrediction(const Eigen::VectorXd& input);
 
     private:
         Topology m_topology;

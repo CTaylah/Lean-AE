@@ -9,3 +9,8 @@ NeuralNetwork::NeuralNetwork(Topology topology) : m_topology(topology){
     }
 
 }
+
+void NeuralNetwork::FeedForward(const Eigen::VectorXd& inputs){
+    for(int i = 1; i < m_layers.size(); i++){
+    }
+}

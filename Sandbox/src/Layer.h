@@ -10,20 +10,24 @@ class Layer {
 
     public:
         //numInputs: number of neurons in previous layer
-        Layer(int numInputs, int size) : m_size(size), m_weights(size, numInputs){
-            for(int i = 0; i < size; i++){
-                m_neurons.push_back(Neuron(numInputs));
-                m_weights.row(i) << m_neurons[i].GetWeightsRef().transpose();
+        Layer(int numInputs, int size) : m_size(size){
+            if(numInputs < 0 || size <= 0){
+                throw std::invalid_argument("Layer: invalid number of inputs or size");
             }
 
+            m_weights = Eigen::MatrixXd::Random(size, numInputs);
+            m_biases = Eigen::VectorXd::Random(size);
         }
         
-    
+        Eigen::VectorXd FeedForward(const Eigen::VectorXd& inputs);
+        Eigen::VectorXd GetActivations(){ return m_activations; }
 
     private:
         std::vector<Neuron> m_neurons;
         //Number of rows = number of neurons
         Eigen::MatrixXd m_weights;
+        Eigen::VectorXd m_biases;
+        Eigen::VectorXd m_activations;
 
         int m_size;
 

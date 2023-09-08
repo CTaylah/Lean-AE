@@ -3,7 +3,9 @@
 
 #include "gtest/gtest.h"
 
+#include "MathTest.hpp"
 #include "LayerTest.hpp"
+#include "NeuronTest.hpp"
 #include "NeuralNetworkTest.hpp"
 #include "Math.h"
 
@@ -13,6 +15,7 @@
 
 #endif
 int main(int argc, char** argv){
+
 
     #ifdef DEBUG_TEST
 
