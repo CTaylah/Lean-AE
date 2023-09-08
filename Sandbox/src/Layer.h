@@ -11,12 +11,10 @@ class Layer {
     public:
         //numInputs: number of neurons in previous layer
         Layer(int numInputs, int size) : m_size(size), m_weights(size, numInputs){
-            std::cout << size << std::endl;
             for(int i = 0; i < size; i++){
                 m_neurons.push_back(Neuron(numInputs));
                 m_weights.row(i) << m_neurons[i].GetWeightsRef().transpose();
             }
-
 
         }
         

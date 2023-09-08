@@ -1,19 +1,22 @@
 
-#include "Math.hpp"
+
 
 
 #include "gtest/gtest.h"
 
+#include "LayerTest.hpp"
+#include "NeuralNetworkTest.hpp"
+#include "Math.h"
+
 #include <iostream>
 #include <time.h>
 
-#include "LayerTest.hpp"
 
 TEST(Math, RandomDouble)
 {
     for(int i =0; i < 1000; i++)
     {
-        double a = RandomDouble(-0.1, 0.1);
+        double a = Math::RandomDouble(-0.1, 0.1);
         EXPECT_GE(a, -0.1);
         EXPECT_LE(a, 0.1);
     }
