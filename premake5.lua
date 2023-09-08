@@ -2,6 +2,8 @@ workspace "NeuralNetworks"
     configurations { "Debug", "Release", "DebugTest" }
     includedirs { "vendor" }
 
+
+    
 project "Sandbox"
     language "C++"
     cppdialect  "C++14"
@@ -25,9 +27,10 @@ project "Sandbox"
         kind "ConsoleApp"
     
     filter "configurations:DebugTest"
-        defines { "DEBUG" }
+        defines { "DEBUG_TEST" }
         symbols "On"
         kind "StaticLib"
+
 
 project "Tests"
     kind "ConsoleApp"
@@ -37,14 +40,13 @@ project "Tests"
     links { "googletest" }
     links { "Sandbox" }
 
-    includedirs { "googletest/googletest/include", "googletest/googletest", "Sandbox/src" }
+    includedirs { "%{wks.location}/googletest/googletest/include", "%{wks.location}/googletest/googletest", "%{wks.location}/Sandbox/src" }
 
     targetdir "%{wks.location}/bin/%{prj.name}/%{cfg.buildcfg}"
     objdir "%{wks.location}/bin/bin-int/%{prj.name}/%{cfg.buildcfg}" 
     location "%{wks.location}/build/%{prj.name}/"
 
     files { "%{prj.name}/**.h", "%{prj.name}/**.hpp", "%{prj.name}/**.c", "%{prj.name}/**.cpp"}
-
 
 project "googletest"
     kind "StaticLib"
