@@ -8,7 +8,7 @@ class Neuron{
     public:
         Neuron(int numInputs) {
             m_weights = Eigen::VectorXd::Random(numInputs);
-            m_bias = RandomDouble(-0.1, 0.1);
+            m_bias = Math::RandomDouble(-0.1, 0.1);
         }
 
         double GetActivation(Eigen::VectorXd inputs);
