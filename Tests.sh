@@ -1,2 +1,2 @@
-make
-./bin/Tests/Debug/Tests
+make config=debugtest
+./bin/Tests/DebugTest/Tests

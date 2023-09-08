@@ -10,8 +10,8 @@
 TEST(Layer, Constructor)
 {
 
-    int numberInputs = 8;
-    int numberNeurons = 3;
+    int numberInputs = Math::RandomInt(1, 100);
+    int numberNeurons = Math::RandomInt(1, 100);
 
     Layer l(numberInputs, numberNeurons);
     Neuron* n = &l.m_neurons[0];

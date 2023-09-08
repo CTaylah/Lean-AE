@@ -10,6 +10,13 @@ namespace Math
         return uniformReal(randomEngine);
     }
 
+    inline double RandomInt(int min, int max){
+        std::uniform_int_distribution<int> uniformReal(min,max);
+        std::default_random_engine randomEngine;
+        return uniformReal(randomEngine);
+    }
+
+
     inline double ReLU(double x){
         return x > 0 ? x : 0;
     }

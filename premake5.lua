@@ -1,9 +1,8 @@
 workspace "NeuralNetworks"
-    configurations { "Debug", "Release" }
+    configurations { "Debug", "Release", "DebugTest" }
     includedirs { "vendor" }
 
 project "Sandbox"
-    kind "ConsoleApp"
     language "C++"
     cppdialect  "C++14"
 
@@ -18,11 +17,17 @@ project "Sandbox"
     filter "configurations:Debug"
         defines { "DEBUG" }
         symbols "On"
+        kind "ConsoleApp"
 
     filter "configurations:Release"
         defines { "NDEBUG" }
         optimize "On"
-
+        kind "ConsoleApp"
+    
+    filter "configurations:DebugTest"
+        defines { "DEBUG" }
+        symbols "On"
+        kind "StaticLib"
 
 project "Tests"
     kind "ConsoleApp"
@@ -30,6 +35,7 @@ project "Tests"
     cppdialect  "C++14"
 
     links { "googletest" }
+    links { "Sandbox" }
 
     includedirs { "googletest/googletest/include", "googletest/googletest", "Sandbox/src" }
 
