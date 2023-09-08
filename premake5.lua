@@ -1,7 +1,8 @@
 workspace "NeuralNetworks"
     configurations { "Debug", "Release", "DebugTest" }
     includedirs { "vendor" }
-
+    filter "configurations:DebugTest"
+        defines { "DEBUG_TEST" }
 
     
 project "Sandbox"

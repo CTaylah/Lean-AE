@@ -18,6 +18,8 @@ int main(int argc, char** argv){
     srand((unsigned) time(0));
     ::testing::InitGoogleTest();
     auto a = RUN_ALL_TESTS();
-
+    
     #endif
+    return 0;
+
 }
