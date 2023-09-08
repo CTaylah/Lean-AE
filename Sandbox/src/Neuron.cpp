@@ -2,9 +2,9 @@
 
 
 double Neuron::GetActivation(Eigen::VectorXd inputs){
-    return ReLU(m_weights.dot(inputs) + m_bias);
+    return Math::ReLU(m_weights.dot(inputs) + m_bias);
 }
 
 double Neuron::GetActivationDerivative(Eigen::VectorXd inputs){
-    return ReLUDerivative(m_weights.dot(inputs) + m_bias);
+    return Math::ReLUDerivative(m_weights.dot(inputs) + m_bias);
 }
