@@ -1,7 +1,11 @@
 #pragma once
-#include "Math.hpp"
+
 
 #include "Eigen/Dense"
+#include "Math.h"
+
+#include <random>
+
 
 
 class Neuron{

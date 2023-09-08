@@ -14,7 +14,7 @@ project "Sandbox"
     location "%{wks.location}/build/%{prj.name}/"
 
 
-    files { "%{prj.name}/**.h", "%{prj.name}/**.hpp", "%{prj.name}/**.c", "%{prj.name}/**.cpp"}
+    files {"%{prj.name}/**.hpp", "%{prj.name}/**.c", "%{prj.name}/**.cpp"}
     
 
     filter "configurations:Debug"
@@ -47,7 +47,9 @@ project "Tests"
     objdir "%{wks.location}/bin/bin-int/%{prj.name}/%{cfg.buildcfg}" 
     location "%{wks.location}/build/%{prj.name}/"
 
-    files { "%{prj.name}/**.h", "%{prj.name}/**.hpp", "%{prj.name}/**.c", "%{prj.name}/**.cpp"}
+    files {"%{prj.name}/**.hpp", "%{prj.name}/**.c", "%{prj.name}/**.cpp",
+            "%{wks.location}/Sandbox/src**.hpp", "%{wks.location}/Sandbox/src/**.c", "%{wks.location}/Sandbox/src/**.cpp"}
+    removefiles { "**/main.cpp/**" }
 
 project "googletest"
     kind "StaticLib"

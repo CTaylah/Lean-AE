@@ -3,12 +3,13 @@
 
 #include "gtest/gtest.h"
 
+#include "LayerTest.hpp"
+#include "NeuralNetworkTest.hpp"
+#include "Math.h"
+
 #include <iostream>
 #include <time.h>
 
-#include "LayerTest.hpp"
-#include "NeuronTest.hpp"
-#include "MathTest.hpp"
 
 #endif
 int main(int argc, char** argv){

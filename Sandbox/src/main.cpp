@@ -1,5 +1,3 @@
-#include "Math.hpp"
-#include "Neuron.h"
 
 
 #include <iostream>
