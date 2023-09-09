@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Neuron.h"
+#include "Math.h"
 
 #include "Eigen/Dense"
 

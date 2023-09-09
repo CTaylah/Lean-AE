@@ -5,7 +5,6 @@
 
 #include "MathTest.hpp"
 #include "LayerTest.hpp"
-#include "NeuronTest.hpp"
 #include "NeuralNetworkTest.hpp"
 #include "Math.h"
 
