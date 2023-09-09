@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Eigen/Dense"
 #include <random>
 
 namespace Math{
@@ -19,9 +20,30 @@ namespace Math{
         return x > 0 ? x : 0;
     }
 
+    inline Eigen::VectorXd ReLU(const Eigen::VectorXd& x){
+        Eigen::VectorXd result(x.size());
+        for(int i = 0; i < x.size(); i++){
+            result(i) = ReLU(x(i));
+        }
+        return result;
+    }
+
     inline double ReLUDerivative(double x){
         return x > 0 ? 1 : 0;
     }
+
+    inline Eigen::VectorXd ReLUDerivative(const Eigen::VectorXd& x){
+        Eigen::VectorXd result(x.size());
+        for(int i = 0; i < x.size(); i++){
+            result(i) = ReLUDerivative(x(i));
+        }
+        return result;
+    }
+
+    inline double SquaredError(Eigen::VectorXd& prediction, Eigen::VectorXd& label){
+        return (prediction - label).squaredNorm();
+    }
+    
 }
 
 

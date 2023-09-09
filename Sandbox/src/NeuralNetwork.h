@@ -24,11 +24,10 @@ class NeuralNetwork {
         NeuralNetwork(Topology topology); 
 
         void FeedForward(const Eigen::VectorXd& input);
-        
-        ~NeuralNetwork() = default;
-
+        void Backpropagate(const Eigen::VectorXd& target, double learningRate);
         Eigen::VectorXd GetPrediction(const Eigen::VectorXd& input);
 
+        ~NeuralNetwork() = default;
     private:
         Topology m_topology;
         std::vector<Layer> m_layers;
