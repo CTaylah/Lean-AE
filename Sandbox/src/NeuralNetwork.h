@@ -1,34 +1,28 @@
 #pragma once
 
+#include "Data.h"
 #include "Layer.h"
 
 #include "Eigen/Dense"
 
 #include <vector>
-
-
-struct Topology
-{
-    //Do not include input layer in neuronsPerLayer
-    Topology(int inputSize, std::vector<unsigned int> neuronsPerLayer) 
-        : inputSize(inputSize), neuronsPerLayer(neuronsPerLayer) {}
-    unsigned int inputSize, outputSize;
-
-    std::vector<unsigned int> neuronsPerLayer;
-
-};
+#include <iostream>
 
 class NeuralNetwork {
 
     public:
-        NeuralNetwork(Topology topology); 
+        NeuralNetwork(std::vector<int> topology); 
 
-        void FeedForward(const Eigen::VectorXd& input);
-        void Backpropagate(const Eigen::VectorXd& target, double learningRate);
-        Eigen::VectorXd GetPrediction(const Eigen::VectorXd& input);
+        void Backpropagate(const Eigen::VectorXd input, const Eigen::VectorXd& target, double learningRate);
+
+        Eigen::VectorXd GetPrediction(const Eigen::VectorXd& input) {
+            FeedForward(input);
+            return m_layers[m_layers.size() - 1].GetActivations();
+        };
 
         ~NeuralNetwork() = default;
     private:
-        Topology m_topology;
+        void FeedForward(const Eigen::VectorXd& input);
+        std::vector<int> m_topology;
         std::vector<Layer> m_layers;
 };

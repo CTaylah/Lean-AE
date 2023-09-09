@@ -5,6 +5,7 @@
 #include "Eigen/Dense"
 
 #include <vector>
+#include <iostream>
 
 class Layer {
 
@@ -15,8 +16,8 @@ class Layer {
                 throw std::invalid_argument("Layer: invalid number of inputs or size");
             }
 
-            m_weights = Eigen::MatrixXd::Random(size, numInputs);
-            m_biases = Eigen::VectorXd::Random(size);
+            m_weights = Eigen::MatrixXd::Random(size, numInputs) * sqrt(2.0 / numInputs);
+            m_biases = Eigen::VectorXd::Zero(size);
         }
         
         Eigen::VectorXd FeedForward(const Eigen::VectorXd& inputs);
@@ -44,11 +45,23 @@ class Layer {
         //Number of rows = number of neurons
         Eigen::MatrixXd m_weights;
         Eigen::VectorXd m_biases;
-        Eigen::VectorXd m_activations;
         Eigen::VectorXd m_weightedSums;
 
+        Eigen::VectorXd m_activations;
         int m_size;
-    
+
+    friend class InputLayer;    
 
 };
 
+class InputLayer : Layer{
+    public:
+        InputLayer(int size) : Layer(0, size) {}
+
+    void SetActivations(const Eigen::VectorXd& activations){
+        if(activations.size() != m_activations.size())
+            throw std::invalid_argument("InputLayer::SetActivations: invalid size of activations");
+
+        m_activations = activations;
+    }
+};

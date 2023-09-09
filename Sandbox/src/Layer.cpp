@@ -1,15 +1,20 @@
 #include "Layer.h"
 
 Eigen::VectorXd Layer::FeedForward(const Eigen::VectorXd& inputs){
+    //If this is the input layer, just return the inputs
+    if(m_weights.size() == 0){
+        m_activations = inputs;
+        return inputs;
+    }
+
     if(inputs.size() != m_weights.cols()){
-        throw std::invalid_argument("Layer::FeedForward: invalid number of inputs");
+        std::cout << "size: " << m_size << std::endl;
+        throw std::invalid_argument("Layer::FeedForward: invalid number of inputs: size:");
     }
 
     m_weightedSums = (m_weights * inputs) + m_biases;
+    m_activations = Math::ReLU(m_weightedSums);
 
-    for(int i = 0; i < m_activations.rows(); i++){
-        m_activations(i) = Math::ReLU(m_weightedSums(i));
-    }
 
     return m_activations;    
 

@@ -9,7 +9,6 @@ struct TrainingSettings{
     TrainingSettings(double learningRate, int epochs, int batchSize, const Eigen::VectorXd& trainingData, const Eigen::VectorXd& labels) 
         : learningRate(learningRate), epochs(epochs), batchSize(batchSize), trainingData(trainingData), labels(labels) {}
 
-    
     Eigen::VectorXd trainingData;
     Eigen::VectorXd labels;
 

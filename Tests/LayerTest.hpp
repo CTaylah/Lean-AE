@@ -18,9 +18,8 @@ TEST(Layer, Constructor)
     EXPECT_EQ(l.m_weights.cols(), numberInputs);
 }
 
-// Test the FeedForward method
+// Hand calculated values
 TEST(LayerTest, FeedForward) {
-    // Define specific weights and biases for the layer (you can choose these values)
     Layer layerUnderTest(3,4);
     layerUnderTest.m_weights << 0.2, -0.3, 0.5,
                                 -0.4, 0.7, -0.2,
@@ -28,18 +27,17 @@ TEST(LayerTest, FeedForward) {
                                 0.5, -0.1, -0.2;
     
     layerUnderTest.m_biases << 0.1, -0.2, 0.3, -0.1;
-    // Create a sample input vector
     Eigen::VectorXd input(3);
     input << 0.5, -0.2, 0.8;
 
-    // Call the FeedForward method
     Eigen::VectorXd activations = layerUnderTest.FeedForward(input);
 
-    // Calculate the expected activations manually based on the chosen weights and biases
     Eigen::VectorXd expectedActivations(4);
     expectedActivations << 0.66, 0.0, 0.07, 0.01;  // Expected values based on specific weights and biases
+
     // Check if the activations are approximately equal to the expected values
     for (int i = 0; i < 4; ++i) {
         EXPECT_NEAR(activations(i), expectedActivations(i), 1e-3);  // Tolerance used for approximate equality
     }
+
 }
