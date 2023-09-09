@@ -1,12 +1,8 @@
-#include "Math.hpp"
-#include "Neuron.h"
 
-
+#include "Eigen/Dense"
 #include <iostream>
 
 
 int main(){
-
-    
-    return 0;
+    Eigen::Map<Eigen::MatrixXd> mf();
 }
