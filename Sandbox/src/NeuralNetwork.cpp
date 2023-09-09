@@ -27,7 +27,7 @@ void NeuralNetwork::Backpropagate(const Eigen::VectorXd input, const Eigen::Vect
     Layer& outputLayer = m_layers[m_layers.size() - 1];
 
     Eigen::VectorXd c = (outputLayer.GetActivations() - target);
-    Eigen::VectorXd outputError = Math::ReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(c);
+    Eigen::VectorXd outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(c);
 
 
     Eigen::MatrixXd outputWeightGradients = outputError * m_layers[m_layers.size() - 2].GetActivations().transpose();
@@ -53,7 +53,7 @@ void NeuralNetwork::Backpropagate(const Eigen::VectorXd input, const Eigen::Vect
         Layer& hiddenLayer = m_layers[i];
         Layer& nextLayer = m_layers[i+1];
 
-        Eigen::VectorXd hiddenError = Math::ReLUDerivative(hiddenLayer.GetWeightedSums()).cwiseProduct(nextLayer.GetWeights().transpose() * outputError);
+        Eigen::VectorXd hiddenError = Math::LeakyReLUDerivative(hiddenLayer.GetWeightedSums()).cwiseProduct(nextLayer.GetWeights().transpose() * outputError);
 
         Eigen::MatrixXd hiddenWeightGradients = hiddenError * m_layers[i-1].GetActivations().transpose();
         hiddenWeightGradients *= learningRate;

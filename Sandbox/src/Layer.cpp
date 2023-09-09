@@ -13,7 +13,7 @@ Eigen::VectorXd Layer::FeedForward(const Eigen::VectorXd& inputs){
     }
 
     m_weightedSums = (m_weights * inputs) + m_biases;
-    m_activations = Math::ReLU(m_weightedSums);
+    m_activations = Math::LeakyReLU(m_weightedSums);
 
 
     return m_activations;    

@@ -41,16 +41,16 @@ TEST(NeuralNetwork, Backpropagation)
     targets << 1;
 
 for(int i = 0; i < 10; i++){
-    NeuralNetwork network(std::vector<int>({8, 7, 6}));
+    NeuralNetwork network(std::vector<int>({8, 6, 6}));
     Eigen::VectorXd inputs(8);
     inputs << 0.43, 0.9, 0.3, 0.034, 0.12, 0.3232, 0.1, 0.23;
 
     Eigen::VectorXd targets(6);
-    targets << .98, 0, 0, 0, 0, 0;
+    targets << 1, 0, 0, 0, 0, 0;
 
 
     for(int i = 0; i < 50000; i++)
-        network.Backpropagate(inputs, targets, 0.05);
+        network.Backpropagate(inputs, targets, 0.02);
     
     std::cout << network.GetPrediction(inputs) << std::endl;
     std::cout << "-----------------------------------" << std::endl;

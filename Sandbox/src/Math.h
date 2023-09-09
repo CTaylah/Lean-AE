@@ -40,6 +40,30 @@ namespace Math{
         return result;
     }
 
+    inline double LeakyReLU(double x){
+        return x > 0 ? x : 0.01 * x;
+    }
+
+    inline double LeakyReLUDerivative(double x){
+        return x > 0 ? 1 : 0.01;
+    }
+
+    inline Eigen::VectorXd LeakyReLU(const Eigen::VectorXd& x){
+        Eigen::VectorXd result(x.size());
+        for(int i = 0; i < x.size(); i++){
+            result(i) = LeakyReLU(x(i));
+        }
+        return result;
+    }
+
+    inline Eigen::VectorXd LeakyReLUDerivative(const Eigen::VectorXd& x){
+        Eigen::VectorXd result(x.size());
+        for(int i = 0; i < x.size(); i++){
+            result(i) = LeakyReLUDerivative(x(i));
+        }
+        return result;
+    }
+
     inline double SquaredError(Eigen::VectorXd& prediction, Eigen::VectorXd& label){
         return (prediction - label).squaredNorm();
     }
