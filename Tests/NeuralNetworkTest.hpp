@@ -28,7 +28,6 @@ TEST(NeuralNetwork, ForwardPropagation)
     inputs << 1, 1, 0;
     network.FeedForward(inputs);
 
-
 }
 
 TEST(NeuralNetwork, Backpropagation)

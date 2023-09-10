@@ -15,6 +15,8 @@ class NeuralNetwork {
 
         void Backpropagate(const Eigen::VectorXd input, const Eigen::VectorXd& target, double learningRate);
 
+        //void Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets);
+
         Eigen::VectorXd GetPrediction(const Eigen::VectorXd& input) {
             FeedForward(input);
             return m_layers[m_layers.size() - 1].GetActivations();

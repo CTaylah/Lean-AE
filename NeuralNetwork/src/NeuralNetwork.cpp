@@ -21,7 +21,6 @@ void NeuralNetwork::FeedForward(const Eigen::VectorXd& inputs){
 
 void NeuralNetwork::Backpropagate(const Eigen::VectorXd input, const Eigen::VectorXd& target, double learningRate){
     FeedForward(input);
-    //First, calculate the error for the output layer
 
 
     Layer& outputLayer = m_layers[m_layers.size() - 1];
@@ -29,19 +28,12 @@ void NeuralNetwork::Backpropagate(const Eigen::VectorXd input, const Eigen::Vect
     Eigen::VectorXd c = (outputLayer.GetActivations() - target);
     Eigen::VectorXd outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(c);
 
-
     Eigen::MatrixXd outputWeightGradients = outputError * m_layers[m_layers.size() - 2].GetActivations().transpose();
     outputWeightGradients *= learningRate;
 
     Eigen::VectorXd outputBiasGradients = outputError; 
     outputBiasGradients *= learningRate;
-
-    //Update the weights and biases for the output layer
-
-    // std::cout << "Output Layer" << std::endl;
-    // std::cout << outputLayer.GetWeights() << std::endl;
-    // std::cout << outputWeightGradients << std::endl;
-    
+   
     outputLayer.SetWeights(outputLayer.GetWeights() - outputWeightGradients); 
     outputLayer.SetBiases(outputLayer.GetBiases() - outputBiasGradients);
 
@@ -60,13 +52,6 @@ void NeuralNetwork::Backpropagate(const Eigen::VectorXd input, const Eigen::Vect
 
         Eigen::VectorXd hiddenBiasGradients = hiddenError;
         hiddenBiasGradients *= learningRate;
-
-        //Update the weights and biases for the hidden layer
-        
-        // std::cout << "" << std::endl;
-        // std::cout << "Hidden Layer:" << std::endl;
-        // std::cout << hiddenLayer.GetWeights() << std::endl;
-        // std::cout << hiddenWeightGradients << std::endl;
 
         hiddenLayer.SetWeights(hiddenLayer.GetWeights() - hiddenWeightGradients);
         hiddenLayer.SetBiases(hiddenLayer.GetBiases() - hiddenBiasGradients);

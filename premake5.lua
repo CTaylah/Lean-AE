@@ -5,33 +5,30 @@ workspace "NeuralNetworks"
         defines { "DEBUG_TEST" }
 
     
-project "Sandbox"
+project "NeuralNetwork"
     language "C++"
     cppdialect  "C++14"
+    kind "StaticLib"
 
     targetdir "%{wks.location}/bin/%{prj.name}/%{cfg.buildcfg}"
     objdir "%{wks.location}/bin/bin-int/%{prj.name}/%{cfg.buildcfg}" 
     location "%{wks.location}/build/%{prj.name}/"
 
+    includedirs { "%{prj.name}/include" }
 
     files {"%{prj.name}/**.hpp", "%{prj.name}/**.c", "%{prj.name}/**.cpp"}
-    
 
     filter "configurations:Debug"
         defines { "DEBUG" }
         symbols "On"
-        kind "ConsoleApp"
 
     filter "configurations:Release"
-        defines { "NDEBUG" }
+        defines { "RELEASE" }
         optimize "On"
-        kind "ConsoleApp"
     
-    filter "configurations:DebugTest"
-        defines { "DEBUG_TEST" }
-        symbols "On"
-        kind "StaticLib"
 
+
+    
 
 project "Tests"
     kind "ConsoleApp"
@@ -39,9 +36,9 @@ project "Tests"
     cppdialect  "C++14"
 
     links { "googletest" }
-    links { "Sandbox" }
+    links { "NeuralNetwork" }
 
-    includedirs { "%{wks.location}/googletest/googletest/include", "%{wks.location}/googletest/googletest", "%{wks.location}/Sandbox/src" }
+    includedirs { "%{wks.location}/googletest/googletest/include", "%{wks.location}/googletest/googletest", "%{wks.location}/NeuralNetwork/include" }
 
     targetdir "%{wks.location}/bin/%{prj.name}/%{cfg.buildcfg}"
     objdir "%{wks.location}/bin/bin-int/%{prj.name}/%{cfg.buildcfg}" 
@@ -49,6 +46,7 @@ project "Tests"
 
     files {"%{prj.name}/**.hpp", "%{prj.name}/**.c", "%{prj.name}/**.cpp"}
 
+--Third Party
 project "googletest"
     kind "StaticLib"
     includedirs { "googletest/googletest/include", "googletest/googletest" }
