@@ -1,10 +1,11 @@
+#### Note: This project has only been tested on Linux
 
-###Build Instructions:
+### Build Instructions:
 ./Build.sh
 
-Hopeully thats it =)
+Hopeully thats it
 
-###Run Instructions:
+### Run Instructions:
 ./Run.sh [-d|-r]
 -d : Debug
 -r : Release
