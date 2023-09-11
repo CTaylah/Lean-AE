@@ -1,8 +1,8 @@
 
 #include "Data.h"
-#include <string>
 
-bool readMNISTImage(Eigen::VectorXd& data, char* filename){
+
+bool ReadMNISTImages(const std::string& filename, Eigen::Ref<Eigen::MatrixXi>& data){
 
 
     std::ifstream file(filename, std::ios::binary);
@@ -25,13 +25,15 @@ bool readMNISTImage(Eigen::VectorXd& data, char* filename){
 
         int imageSize = numRows * numCols;
 
+
         for(int i = 0; i < numImages; ++i){
             for(int j = 0; j < imageSize; ++j){
                 unsigned char temp = 0;
                 file.read((char*)&temp, sizeof(temp));
-                data(i * imageSize + j) = (double)temp;
+                data(j, i) = (int)temp;
             }
         }
+ 
         return true;
     }
     else{
@@ -41,8 +43,11 @@ bool readMNISTImage(Eigen::VectorXd& data, char* filename){
 
 }
 
-bool readMNISTLabel(Eigen::VectorXd& labels, char* filename){
-    std::ifstream file("data/train-labels.idx1-ubyte", std::ios::binary);
+
+bool ReadMNISTLabels(const std::string& filename, Eigen::Ref<Eigen::MatrixXi>& labels){
+
+    std::ifstream file(filename, std::ios::binary);
+
 
     if(file.is_open()){
         int magicNumber = 0;
@@ -57,8 +62,16 @@ bool readMNISTLabel(Eigen::VectorXd& labels, char* filename){
         for(int i = 0; i < numLabels; ++i){
             unsigned char temp = 0;
             file.read((char*)&temp, sizeof(temp));
-            labels(i) = (double)temp;
+            for(int j = 0; j < 10; ++j){
+                if(j == (int)temp){
+                    labels(j, i) = 1;
+                }
+                else{
+                    labels(j, i) = 0;
+                }
+            }
         }
+
         return true;
     }
     else{

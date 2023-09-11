@@ -1,7 +1,8 @@
 #include "NeuralNetwork.h"
 
 NeuralNetwork::NeuralNetwork(std::vector<int> topology) : m_topology(topology){
-
+    if(m_topology.size() < 2)
+        throw std::invalid_argument("Topology must have at least 2 layers");
 
     m_layers.push_back(Layer(0, m_topology[0]));
 
@@ -19,9 +20,9 @@ void NeuralNetwork::FeedForward(const Eigen::VectorXd& inputs){
     }
 }
 
-void NeuralNetwork::Backpropagate(const Eigen::VectorXd input, const Eigen::VectorXd& target, double learningRate){
+void NeuralNetwork::Backpropagate(const Eigen::VectorXd input, const Eigen::VectorXd& target, double learningRate, double& cost){
     FeedForward(input);
-
+    cost = Math::MeanSquaredError(m_layers.back().GetActivations(), target);
 
     Layer& outputLayer = m_layers[m_layers.size() - 1];
 

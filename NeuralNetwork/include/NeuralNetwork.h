@@ -13,7 +13,7 @@ class NeuralNetwork {
     public:
         NeuralNetwork(std::vector<int> topology); 
 
-        void Backpropagate(const Eigen::VectorXd input, const Eigen::VectorXd& target, double learningRate);
+        void Backpropagate(const Eigen::VectorXd input, const Eigen::VectorXd& target, double learningRate, double& cost);
 
         //void Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets);
 

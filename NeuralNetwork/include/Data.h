@@ -1,6 +1,9 @@
+#pragma once
+
 #include "Eigen/Dense"
 
 #include <iostream>
+#include <string>
 #include <fstream>
 
 
@@ -17,5 +20,5 @@ struct TrainingSettings{
     int batchSize;
 };
 
-void ReadMNISTImages(const std::string& filename, Eigen::VectorXd& data, int& numImages, int& numPixels);
-void ReadMNISTLabels(const std::string& filename, Eigen::VectorXd& labels, int& numLabels);
+[[nodiscard]] bool ReadMNISTImages(const std::string& filename, Eigen::Ref<Eigen::MatrixXi>& data);
+[[nodiscard]] bool ReadMNISTLabels(const std::string& filename, Eigen::Ref<Eigen::MatrixXi>& labels);

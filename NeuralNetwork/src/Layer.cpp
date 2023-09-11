@@ -8,7 +8,6 @@ Eigen::VectorXd Layer::FeedForward(const Eigen::VectorXd& inputs){
     }
 
     if(inputs.size() != m_weights.cols()){
-        std::cout << "size: " << m_size << std::endl;
         throw std::invalid_argument("Layer::FeedForward: invalid number of inputs: size:");
     }
 

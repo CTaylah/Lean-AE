@@ -2,19 +2,23 @@
 
 #include "Eigen/Dense"
 #include <random>
+#include <time.h>
+
 
 namespace Math{
-    inline double RandomDouble(double min, double max){
-        std::uniform_real_distribution<double> uniformReal(min,max);
-        std::default_random_engine randomEngine;
-        return uniformReal(randomEngine);
-    }
+    // inline double RandomDouble(double min, double max){
 
-    inline int RandomInt(int min, int max){
-        std::uniform_int_distribution<int> uniformInt(min,max);
-        std::default_random_engine randomEngine;
-        return uniformInt(randomEngine);
-    }
+    //     std::uniform_real_distribution<double> uniformReal(min,max);
+    //     std::default_random_engine randomEngine;
+    //     return uniformReal(randomEngine);
+    // }
+
+    // inline int RandomInt(int min, int max){
+
+    //     std::uniform_int_distribution<int> uniformInt(min,max);
+    //     std::default_random_engine randomEngine;
+    //     return uniformInt(randomEngine);
+    // }
 
     inline double ReLU(double x){
         return x > 0 ? x : 0;
@@ -65,10 +69,18 @@ namespace Math{
         return result;
     }
 
-    inline double SquaredError(Eigen::VectorXd& prediction, Eigen::VectorXd& label){
-        return (prediction - label).squaredNorm();
+    inline double SquaredError(const Eigen::VectorXd& prediction, const Eigen::VectorXd& label){
+        return 0.5 * (prediction - label).squaredNorm();
     }
-    
+
+    inline Eigen::VectorXd SquaredErrorDerivative(const Eigen::VectorXd& prediction, const Eigen::VectorXd& label){
+        return (prediction - label);
+    }
+
+    inline double MeanSquaredError(const Eigen::VectorXd& prediction, const Eigen::VectorXd& label){
+        return 0.5 * ((prediction - label).squaredNorm()) / prediction.size();
+    }
+   
 }
 
 
