@@ -2,6 +2,8 @@
 #include <iostream>
 #include <ctime>
 
+void vectorToPPM(Eigen::VectorXi example, const std::string& filename);
+
 int main(int argc, char** argv){
 
     srand(time(NULL));
@@ -26,13 +28,13 @@ int main(int argc, char** argv){
 
     double cost = 0;
 
-    NeuralNetwork neuralNetwork({784, 16, 16, 784});
-    for(int e = 0; e < 26; ++e){
-        for(int i = 0; i < 10000; ++i){
+    NeuralNetwork neuralNetwork({784, 40, 784});
+    for(int e = 0; e < 18; ++e){
+        for(int i = 0; i < 5000; ++i){
             int index = rand() % 60000;
             Eigen::VectorXd column = examplesDouble.col(index);
 
-            neuralNetwork.Backpropagate(column, column, 0.00008, cost);
+            neuralNetwork.Backpropagate(column, column, 0.00001, cost);
         }
         std::cout << "Epoch: " << e << " Cost: " << cost << std::endl;
     }
@@ -46,7 +48,26 @@ int main(int argc, char** argv){
             answer = i;
         }
     }
-    std::cout << "Index: " << index << std::endl;
-    std::cout << "Answer: " << answer << std::endl;
 
+    Eigen::VectorXd prediction = neuralNetwork.GetPrediction(examplesDouble.col(index));
+    vectorToPPM((prediction * 255).cast<int>(), "Prediction");
+    vectorToPPM((examplesDouble.col(index) * 255).cast<int>(), "Input");
+
+
+}
+void vectorToPPM(Eigen::VectorXi example, const std::string& filename)
+{
+    std::ofstream file("output/" + filename);
+    file << "P3\n28 28\n255\n";
+    for (int i = 0; i < example.size(); i++)
+    {
+        if(example(i) < 0)
+            example(i) = 0;
+        file << example(i)<< " " << example(i) << " " << example(i) << " ";
+        if ((i + 1) % 28 == 0)
+        {
+            file << "\n";
+        }
+    }
+    file.close();
 }
