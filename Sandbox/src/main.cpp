@@ -26,20 +26,20 @@ int main(int argc, char** argv){
 
     double cost = 0;
 
-    NeuralNetwork neuralNetwork({784, 16, 16, 10});
-    for(int e = 0; e < 24; ++e){
-        for(int i = 0; i < 4000; ++i){
+    NeuralNetwork neuralNetwork({784, 16, 16, 784});
+    for(int e = 0; e < 26; ++e){
+        for(int i = 0; i < 10000; ++i){
             int index = rand() % 60000;
             Eigen::VectorXd column = examplesDouble.col(index);
-            Eigen::VectorXd column2 = labelsDouble.col(index);
 
-            neuralNetwork.Backpropagate(column, column2, 0.0008, cost);
+            neuralNetwork.Backpropagate(column, column, 0.00008, cost);
         }
         std::cout << "Epoch: " << e << " Cost: " << cost << std::endl;
     }
 
     int index = rand() % 60000;
-    std::cout << neuralNetwork.GetPrediction(examplesDouble.col(index)) << std::endl;
+    double meanSquaredError = Math::MeanSquaredError(neuralNetwork.GetPrediction(examplesDouble.col(index)), examplesDouble.col(index));
+    std::cout << meanSquaredError << std::endl;
     int answer;
     for(int i = 0; i < 10; ++i){
         if(labelsDouble(i, index) == 1){
