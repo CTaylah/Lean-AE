@@ -7,5 +7,7 @@ Hopeully thats it
 
 ### Run Instructions:
 ./Run.sh [-d|-r]
+<br>  
 -d : Debug
+<br>  
 -r : Release
