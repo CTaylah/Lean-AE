@@ -1,5 +1,6 @@
 #include "Layer.h"
 
+
 Eigen::VectorXd Layer::FeedForward(const Eigen::VectorXd& inputs){
     //If this is the input layer, just return the inputs
     if(m_weights.size() == 0){

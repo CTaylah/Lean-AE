@@ -28,18 +28,18 @@ int main(int argc, char** argv){
 
     double cost = 0;
 
-    NeuralNetwork neuralNetwork({784, 40, 784});
-    for(int e = 0; e < 18; ++e){
-        for(int i = 0; i < 5000; ++i){
-            int index = rand() % 60000;
+    NeuralNetwork neuralNetwork({784, 256, 256, 784});
+    for(int e = 0; e < 35; ++e){
+        for(int i = 0; i < 2020; ++i){
+            int index = rand() % 10;
             Eigen::VectorXd column = examplesDouble.col(index);
 
-            neuralNetwork.Backpropagate(column, column, 0.00001, cost);
+            neuralNetwork.Backpropagate(column, column, 0.00002, cost);
         }
         std::cout << "Epoch: " << e << " Cost: " << cost << std::endl;
     }
 
-    int index = rand() % 60000;
+    int index = rand() % 10;
     double meanSquaredError = Math::MeanSquaredError(neuralNetwork.GetPrediction(examplesDouble.col(index)), examplesDouble.col(index));
     std::cout << meanSquaredError << std::endl;
     int answer;
@@ -63,6 +63,8 @@ void vectorToPPM(Eigen::VectorXi example, const std::string& filename)
     {
         if(example(i) < 0)
             example(i) = 0;
+        else if(example(i) > 255)
+            example(i) = 255;
         file << example(i)<< " " << example(i) << " " << example(i) << " ";
         if ((i + 1) % 28 == 0)
         {
