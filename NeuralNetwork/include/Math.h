@@ -13,7 +13,7 @@ namespace Math{
     //     return uniformReal(randomEngine);
     // }
 
-    // inline int RandomInt(int min, int max){
+    // inlito int RandomInt(int min, int max){
 
     //     std::uniform_int_distribution<int> uniformInt(min,max);
     //     std::default_random_engine randomEngine;
@@ -80,6 +80,8 @@ namespace Math{
     inline double MeanSquaredError(const Eigen::VectorXd& prediction, const Eigen::VectorXd& label){
         return 0.5 * ((prediction - label).squaredNorm()) / prediction.size();
     }
+
+
    
 }
 

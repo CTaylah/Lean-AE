@@ -16,8 +16,10 @@ if [[ $# -gt 0 ]]; then
   fi
 fi
 
+
 # Generate makefiles using premake
 ./premake/premake5 gmake2
 
 # Build with specified configuration
+sed -i '33i ALL_LDFLAGS += -fopenmp' build/Sandbox/Makefile
 make config=$build_type
