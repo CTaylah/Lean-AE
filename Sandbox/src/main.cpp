@@ -26,22 +26,15 @@ int main(int argc, char** argv){
     Eigen::MatrixXd labelsDouble = labelsRef.cast<double>();
     examplesDouble = examplesDouble / 255.0;
 
-    double cost = 0;
 
     NeuralNetwork neuralNetwork({784, 256, 256, 784});
+    TrainingSettings settings(0.0115, 10, omp_get_num_threads());
+    neuralNetwork.Train(settings, examplesDouble, examplesDouble);
 
-    int batch_size = omp_get_num_threads();
-    double total_cost = 0.0;
-    for (int e = 0; e < 10; ++e) {
-        double epoch_cost = 0.0;
-        for (int i = 0; i < 300; i += batch_size) {
-            Eigen::MatrixXd batch = examplesDouble.block(0, i, 784, batch_size);
-            neuralNetwork.BackpropagateBatch(batch, batch, 0.029, epoch_cost);
-        }
-        std::cout << "Epoch: " << e << " Cost: " << epoch_cost << std::endl;
-    }
-    
-    int index = rand() % 10;
+    int index = rand() % 30000;
+    index += 30000;
+    std::cout << "index: " << index << std::endl;
+
     double meanSquaredError = Math::MeanSquaredError(neuralNetwork.GetPrediction(examplesDouble.col(index)), examplesDouble.col(index));
     std::cout << meanSquaredError << std::endl;
     int answer;

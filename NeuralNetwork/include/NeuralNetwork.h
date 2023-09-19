@@ -8,6 +8,15 @@
 #include <vector>
 #include <iostream>
 
+struct TrainingSettings{
+    TrainingSettings(double learningRate, int epochs, int batchSize) 
+        : learningRate(learningRate), epochs(epochs), batchSize(batchSize) {}
+
+    double learningRate;
+    int epochs;
+    int batchSize;
+};
+
 class NeuralNetwork {
 
     public:
@@ -15,7 +24,7 @@ class NeuralNetwork {
 
         void Backpropagate(const Eigen::VectorXd input, const Eigen::VectorXd& target, double learningRate, double& cost);
 
-        //void Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets);
+        void Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets);
 
         void BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, double learningRate, double& cost);
 

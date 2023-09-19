@@ -22,6 +22,22 @@ void NeuralNetwork::FeedForward(const Eigen::VectorXd& inputs){
     }
 }
 
+void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets){
+    if(inputs.cols() != targets.cols())
+        throw std::invalid_argument("NeuralNetwork::Train: inputs and targets must have the same number of columns");
+
+    for(int epoch = 0; epoch < settings.epochs; epoch++){
+        double cost = 0.0;
+        for(int i = 0; i < inputs.cols(); i += settings.batchSize){
+            Eigen::MatrixXd batch = inputs.block(0, i, inputs.rows(), settings.batchSize);
+            Eigen::MatrixXd batchTargets = targets.block(0, i, targets.rows(), settings.batchSize);
+            BackpropagateBatch(batch, batchTargets, settings.learningRate, cost);
+        }
+        std::cout << "Epoch: " << epoch << " Cost: " << cost << std::endl;
+    }
+
+}
+
 void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, double learningRate, double& cost){
     if(inputs.cols() != targets.cols())
         throw std::invalid_argument("NeuralNetwork::BackpropagateBatch: inputs and targets must have the same number of columns");
@@ -30,7 +46,12 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
     
     std::vector<Eigen::MatrixXd> weightGradients(m_layers.size());
     std::vector<Eigen::VectorXd> biasGradients(m_layers.size());
-    
+       #pragma omp parallel
+    {
+        std::vector<Eigen::MatrixXd> privateWeightGradients(m_layers.size());
+        std::vector<Eigen::VectorXd> privateBiasGradients(m_layers.size());
+
+        #pragma omp for
     for(int i = 0; i < inputs.cols(); i++){
         FeedForward(inputs.col(i));
         
@@ -40,12 +61,12 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
 
         Eigen::MatrixXd outputWeightGradients = outputError * m_layers[m_layers.size() - 2].GetActivations().transpose();
         if(i == 0){
-            weightGradients[m_layers.size() - 1] = outputWeightGradients;
-            biasGradients[m_layers.size() - 1] = outputError;
+            privateWeightGradients[m_layers.size() - 1] = outputWeightGradients;
+            privateBiasGradients[m_layers.size() - 1] = outputError;
         }
         else{
-            weightGradients[m_layers.size() - 1] += outputWeightGradients;
-            biasGradients[m_layers.size() - 1] += outputError;
+            privateWeightGradients[m_layers.size() - 1] += outputWeightGradients;
+            privateBiasGradients[m_layers.size() - 1] += outputError;
         }
     
 
@@ -59,16 +80,24 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
             Eigen::VectorXd hiddenBiasGradients = hiddenError;
 
             if(i == 0){
-                weightGradients[j] = hiddenWeightGradients;
-                biasGradients[j] = hiddenBiasGradients;
+                privateWeightGradients[j] = hiddenWeightGradients;
+                privateBiasGradients[j] = hiddenBiasGradients;
             }
             else{
-                weightGradients[j] += hiddenWeightGradients;
-                biasGradients[j] += hiddenBiasGradients;
+                privateWeightGradients[j] += hiddenWeightGradients;
+                privateBiasGradients[j] += hiddenBiasGradients;
             }
             outputError = hiddenError;
         }
         cost += Math::MeanSquaredError(outputLayer.GetActivations(), targets.col(i));
+    }
+    #pragma omp critical
+    {
+        for(int i = 0; i < m_layers.size(); i++){
+                weightGradients[i] = privateWeightGradients[i];
+                biasGradients[i] = privateBiasGradients[i];
+            }
+        }
     }
     for(int i = 1; i < weightGradients.size(); i++){
         weightGradients[i] /= inputs.cols();
