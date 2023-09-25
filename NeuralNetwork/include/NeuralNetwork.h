@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Data.h"
 #include "Layer.h"
 
 #include "Eigen/Dense"
@@ -15,6 +14,33 @@ struct TrainingSettings{
     double learningRate;
     int epochs;
     int batchSize;
+};
+
+struct AdamParameters{
+    AdamParameters(double learningRate, double beta1, double beta2, double epsilon) 
+        : learningRate(learningRate), beta1(beta1), beta2(beta2), epsilon(epsilon) {
+            firstMomentWeightGradients = std::vector<Eigen::MatrixXd>(0);
+            firstMomentBiasGradients = std::vector<Eigen::VectorXd>(0);
+
+            secondMomentWeightGradients = std::vector<Eigen::MatrixXd>(0);
+            secondMomentBiasGradients = std::vector<Eigen::VectorXd>(0);
+
+            previousWeightGradients = std::vector<Eigen::MatrixXd>(0);
+        }
+
+    double learningRate;
+    double beta1;
+    double beta2;
+    double epsilon;
+
+    std::vector<Eigen::MatrixXd> firstMomentWeightGradients;
+    std::vector<Eigen::VectorXd> firstMomentBiasGradients; 
+
+    std::vector<Eigen::MatrixXd> secondMomentWeightGradients;
+    std::vector<Eigen::VectorXd> secondMomentBiasGradients;
+
+    std::vector<Eigen::MatrixXd> previousWeightGradients;
+
 };
 
 class NeuralNetwork {
@@ -36,6 +62,11 @@ class NeuralNetwork {
         ~NeuralNetwork() = default;
     private:
         void FeedForward(const Eigen::VectorXd& input);
+        
         std::vector<int> m_topology;
         std::vector<Layer> m_layers;
+
+        AdamParameters m_adamParameters;
+
+        struct AdamParameters;
 };

@@ -78,3 +78,23 @@ bool ReadMNISTLabels(const std::string& filename, Eigen::Ref<Eigen::MatrixXi>& l
         return false;
     }
 }
+
+
+void VectorToPPM(Eigen::VectorXi example, const std::string& filename)
+{
+    std::ofstream file("output/" + filename);
+    file << "P3\n28 28\n255\n";
+    for (int i = 0; i < example.size(); i++)
+    {
+        if(example(i) < 0)
+            example(i) = 0;
+        else if(example(i) > 255)
+            example(i) = 255;
+        file << example(i)<< " " << example(i) << " " << example(i) << " ";
+        if ((i + 1) % 28 == 0)
+        {
+            file << "\n";
+        }
+    }
+    file.close();
+}

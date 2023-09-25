@@ -29,8 +29,6 @@ project "Sandbox"
     cppdialect  "C++17"
     kind "ConsoleApp"
 
-    libdirs {"cumath"}
-
     targetdir "%{wks.location}/bin/%{prj.name}/%{cfg.buildcfg}"
     objdir "%{wks.location}/bin/bin-int/%{prj.name}/%{cfg.buildcfg}" 
     location "%{wks.location}/build/%{prj.name}/"
@@ -48,7 +46,6 @@ project "Sandbox"
     filter "configurations:Release"
         defines { "RELEASE" }
         optimize "On"
- 
     
 
 project "Tests"

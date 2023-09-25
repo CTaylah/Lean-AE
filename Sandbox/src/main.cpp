@@ -1,9 +1,8 @@
 #include "NeuralNetwork.h"
+#include "Data.h"
 #include <iostream>
 #include <ctime>
 #include <omp.h>
-std::mt19937 rng;
-void vectorToPPM(Eigen::VectorXi example, const std::string& filename);
 
 int main(int argc, char** argv){
 
@@ -45,25 +44,7 @@ int main(int argc, char** argv){
     }
 
     Eigen::VectorXd prediction = neuralNetwork.GetPrediction(examplesDouble.col(index));
-    vectorToPPM((prediction * 255).cast<int>(), "Prediction");
-    vectorToPPM((examplesDouble.col(index) * 255).cast<int>(), "Input");
+    VectorToPPM((prediction * 255).cast<int>(), "Prediction");
+    VectorToPPM((examplesDouble.col(index) * 255).cast<int>(), "Input");
 
-}
-void vectorToPPM(Eigen::VectorXi example, const std::string& filename)
-{
-    std::ofstream file("output/" + filename);
-    file << "P3\n28 28\n255\n";
-    for (int i = 0; i < example.size(); i++)
-    {
-        if(example(i) < 0)
-            example(i) = 0;
-        else if(example(i) > 255)
-            example(i) = 255;
-        file << example(i)<< " " << example(i) << " " << example(i) << " ";
-        if ((i + 1) % 28 == 0)
-        {
-            file << "\n";
-        }
-    }
-    file.close();
 }
