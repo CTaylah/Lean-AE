@@ -47,7 +47,7 @@ class NeuralNetwork {
         ~NeuralNetwork() = default;
     private:
         void FeedForward(const Eigen::VectorXd& input);
-        void BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, TrainingSettings settings, double& cost);
+        void BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, TrainingSettings settings, double& cost, double epoch);
 
         std::vector<int> m_topology;
         std::vector<Layer> m_layers;
