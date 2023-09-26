@@ -12,7 +12,7 @@ void KFold(int k, NeuralNetwork network, const Eigen::MatrixXd& examples)
     {
         folds[i] = examples.block(0, i * foldSize, examples.rows(), foldSize);
     }
-    TrainingSettings settings(0.0115, 10, omp_get_num_threads());
+    TrainingSettings settings(0.0005, 10, omp_get_num_threads());
 
     //Now, train the network k times, each time using a different fold as the validation set
     for(int i = 0; i < k; i++)

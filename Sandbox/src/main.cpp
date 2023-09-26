@@ -27,11 +27,13 @@ int main(int argc, char** argv){
 
 
     NeuralNetwork neuralNetwork({784, 256, 256, 784});
-    TrainingSettings settings(0.0115, 10, omp_get_num_threads());
+    TrainingSettings settings(50, omp_get_num_threads(), 0.00041);
+
     neuralNetwork.Train(settings, examplesDouble, examplesDouble);
 
-    int index = rand() % 30000;
-    index += 30000;
+    int index = rand() % 300;
+    index = 6;
+    // index += 30000;
     std::cout << "index: " << index << std::endl;
 
     double meanSquaredError = Math::MeanSquaredError(neuralNetwork.GetPrediction(examplesDouble.col(index)), examplesDouble.col(index));

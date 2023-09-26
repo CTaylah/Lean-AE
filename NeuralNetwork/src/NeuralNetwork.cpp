@@ -22,22 +22,33 @@ void NeuralNetwork::FeedForward(const Eigen::VectorXd& inputs){
 }
 
 void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets){
+
     if(inputs.cols() != targets.cols())
         throw std::invalid_argument("NeuralNetwork::Train: inputs and targets must have the same number of columns");
 
+        for(int i = 0; i < m_layers.size(); i++){
+            settings.firstMomentWeightGradients.push_back(Eigen::MatrixXd::Zero(m_layers[i].GetWeights().rows(), m_layers[i].GetWeights().cols()));
+            settings.firstMomentBiasGradients.push_back(Eigen::VectorXd::Zero(m_layers[i].GetBiases().rows()));
+
+            settings.secondMomentWeightGradients.push_back(Eigen::MatrixXd::Zero(m_layers[i].GetWeights().rows(), m_layers[i].GetWeights().cols()));
+            settings.secondMomentBiasGradients.push_back(Eigen::VectorXd::Zero(m_layers[i].GetBiases().rows()));
+        }
+
+
     for(int epoch = 0; epoch < settings.epochs; epoch++){
         double cost = 0.0;
-        for(int i = 0; i < inputs.cols() / 100; i += settings.batchSize){
+        for(int i = 0; i < inputs.cols() / 500; i += settings.batchSize){
             Eigen::MatrixXd batch = inputs.block(0, i, inputs.rows(), settings.batchSize);
             Eigen::MatrixXd batchTargets = targets.block(0, i, targets.rows(), settings.batchSize);
-            BackpropagateBatch(batch, batchTargets, settings.learningRate, cost);
+
+            BackpropagateBatch(batch, batchTargets, settings, cost);
         }
         std::cout << "Epoch: " << epoch << " Cost: " << cost << std::endl;
     }
 }
 
 
-void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, double beta1, double beta2, double learningRate, double& cost){
+void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, TrainingSettings settings, double& cost){
     if(inputs.cols() != targets.cols())
         throw std::invalid_argument("NeuralNetwork::BackpropagateBatch: inputs and targets must have the same number of columns");
 
@@ -45,6 +56,7 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
     
     std::vector<Eigen::MatrixXd> weightGradients(m_layers.size());
     std::vector<Eigen::VectorXd> biasGradients(m_layers.size());
+
 
        #pragma omp parallel
     {
@@ -101,13 +113,32 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
     }
 
 
-    std::vector<Eigen::MatrixXd> previousWeightGradients(m_layers.size());
+
     for(int i = 1; i < weightGradients.size(); i++){
         weightGradients[i] /= inputs.cols();
         biasGradients[i] /= inputs.cols();
 
-        m_layers[i].SetWeights(m_layers[i].GetWeights() - weightGradients[i] * learningRate);
-        m_layers[i].SetBiases(m_layers[i].GetBiases() - biasGradients[i] * learningRate);
+        //Github copilot garbledy goop that supposedly makes Adam work
+        //https://arxiv.org/abs/1412.6980
+
+        settings.firstMomentWeightGradients[i] = settings.beta1 * settings.firstMomentWeightGradients[i] + (1 - settings.beta1) * weightGradients[i];
+        settings.firstMomentBiasGradients[i] = settings.beta1 * settings.firstMomentBiasGradients[i] + (1 - settings.beta1) * biasGradients[i];
+
+        settings.secondMomentWeightGradients[i] = settings.beta2 * settings.secondMomentWeightGradients[i] + (1 - settings.beta2) * weightGradients[i].cwiseProduct(weightGradients[i]);
+        settings.secondMomentBiasGradients[i] = settings.beta2 * settings.secondMomentBiasGradients[i] + (1 - settings.beta2) * biasGradients[i].cwiseProduct(biasGradients[i]);
+
+        Eigen::MatrixXd firstMomentWeightGradientsCorrected = settings.firstMomentWeightGradients[i] / (1 - std::pow(settings.beta1, i));
+        Eigen::VectorXd firstMomentBiasGradientsCorrected = settings.firstMomentBiasGradients[i] / (1 - std::pow(settings.beta1, i));
+
+        Eigen::MatrixXd secondMomentWeightGradientsCorrected = settings.secondMomentWeightGradients[i] / (1 - std::pow(settings.beta2, i));
+        Eigen::VectorXd secondMomentBiasGradientsCorrected = settings.secondMomentBiasGradients[i] / (1 - std::pow(settings.beta2, i));
+
+        Eigen::MatrixXd newWeights = m_layers[i].GetWeights() - settings.learningRate * firstMomentWeightGradientsCorrected.cwiseQuotient((secondMomentWeightGradientsCorrected.cwiseSqrt().array() + settings.epsilon).matrix());  
+        Eigen::VectorXd newBiases = m_layers[i].GetBiases() - settings.learningRate * firstMomentBiasGradientsCorrected.cwiseQuotient((secondMomentBiasGradientsCorrected.cwiseSqrt().array() + settings.epsilon).matrix());
+
+
+        m_layers[i].SetWeights(newWeights);
+        m_layers[i].SetBiases(newBiases);
 
     }
     cost /= inputs.cols();
