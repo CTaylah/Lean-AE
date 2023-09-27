@@ -23,19 +23,21 @@ int main(int argc, char** argv){
     examplesDouble = examplesDouble / 255.0;
 
 
-    NeuralNetwork neuralNetwork({784, 256, 120, 256, 784});
-    TrainingSettings settings(25, omp_get_num_threads(), 0.0005);
+    std::cout<< omp_get_num_threads() << std::endl;
+    NeuralNetwork neuralNetwork({784, 256, 128, 256, 784});
+    TrainingSettings settings(90, 64, 0.00037);
     neuralNetwork.Train(settings, examplesDouble, examplesDouble);
 
     int index = rand() % 300;
-    index = 9;
-    // index += 30000;
+    index = 5;
+
     std::cout << "index: " << index << std::endl;
 
     double meanSquaredError = Math::MeanSquaredError(neuralNetwork.GetPrediction(examplesDouble.col(index)), examplesDouble.col(index));
     std::cout << meanSquaredError << std::endl;
 
     Eigen::VectorXd prediction = neuralNetwork.GetPrediction(examplesDouble.col(index));
+    
     VectorToPPM((prediction * 255).cast<int>(), "Prediction");
     VectorToPPM((examplesDouble.col(index) * 255).cast<int>(), "Input");
 

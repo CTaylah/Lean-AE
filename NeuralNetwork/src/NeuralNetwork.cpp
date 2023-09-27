@@ -35,9 +35,9 @@ void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inpu
         }
 
 
-    for(int epoch = 1; epoch < settings.epochs; epoch++){
+    for(int epoch = 0; epoch < settings.epochs; epoch++){
         double cost = 0.0;
-        for(int i = 0; i < inputs.cols() / 500; i += settings.batchSize){
+        for(int i = 0; i < inputs.cols() / 100; i += settings.batchSize){
             Eigen::MatrixXd batch = inputs.block(0, i, inputs.rows(), settings.batchSize);
             Eigen::MatrixXd batchTargets = targets.block(0, i, targets.rows(), settings.batchSize);
 
@@ -58,12 +58,12 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
     std::vector<Eigen::VectorXd> biasGradients(m_layers.size());
 
 
-       #pragma omp parallel
+    //    #pragma omp parallel
     {
         std::vector<Eigen::MatrixXd> privateWeightGradients(m_layers.size());
         std::vector<Eigen::VectorXd> privateBiasGradients(m_layers.size());
 
-        #pragma omp for
+        // #pragma omp for
     for(int i = 0; i < inputs.cols(); i++){
         FeedForward(inputs.col(i));
         
@@ -72,10 +72,12 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
         Eigen::VectorXd outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(c);
 
         Eigen::MatrixXd outputWeightGradients = outputError * m_layers[m_layers.size() - 2].GetActivations().transpose();
+        //This might need to be single threaded
         if(i == 0){
             privateWeightGradients[m_layers.size() - 1] = outputWeightGradients;
             privateBiasGradients[m_layers.size() - 1] = outputError;
         }
+        
         else{
             privateWeightGradients[m_layers.size() - 1] += outputWeightGradients;
             privateBiasGradients[m_layers.size() - 1] += outputError;
@@ -103,7 +105,7 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
         }
         cost += Math::MeanSquaredError(outputLayer.GetActivations(), targets.col(i));
     }
-    #pragma omp critical
+    // #pragma omp critical
     {
         for(int i = 0; i < m_layers.size(); i++){
                 weightGradients[i] = privateWeightGradients[i];
@@ -113,7 +115,6 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
     }
 
 
-
     for(int i = 1; i < weightGradients.size(); i++){
         weightGradients[i] /= inputs.cols();
         biasGradients[i] /= inputs.cols();
@@ -121,27 +122,29 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
         //Github copilot garbledy goop that supposedly makes Adam work
         //https://arxiv.org/abs/1412.6980
 
+        if(epoch == 0)
+        {
+            m_layers[i].SetWeights(m_layers[i].GetWeights() - settings.learningRate * weightGradients[i]);
+            m_layers[i].SetBiases(m_layers[i].GetBiases() - settings.learningRate * biasGradients[i]);
+            continue;
+        }
+        int t = epoch; //+ 1;
 
         settings.firstMomentWeightGradients[i] = settings.beta1 * settings.firstMomentWeightGradients[i] + (1 - settings.beta1) * weightGradients[i];
         settings.firstMomentBiasGradients[i] = settings.beta1 * settings.firstMomentBiasGradients[i] + (1 - settings.beta1) * biasGradients[i];
 
-
         settings.secondMomentWeightGradients[i] = settings.beta2 * settings.secondMomentWeightGradients[i] + (1 - settings.beta2) * weightGradients[i].cwiseProduct(weightGradients[i]);
         settings.secondMomentBiasGradients[i] = settings.beta2 * settings.secondMomentBiasGradients[i] + (1 - settings.beta2) * biasGradients[i].cwiseProduct(biasGradients[i]);
 
-        Eigen::MatrixXd firstMomentWeightGradientsCorrected = settings.firstMomentWeightGradients[i] / (1 - std::pow(settings.beta1, epoch));
-        Eigen::VectorXd firstMomentBiasGradientsCorrected = settings.firstMomentBiasGradients[i] / (1 - std::pow(settings.beta1, epoch));
+        Eigen::MatrixXd firstMomentWeightGradientsCorrected = settings.firstMomentWeightGradients[i] / (1 - std::pow(settings.beta1, t));
+        Eigen::VectorXd firstMomentBiasGradientsCorrected = settings.firstMomentBiasGradients[i] / (1 - std::pow(settings.beta1, t));
 
-        Eigen::MatrixXd secondMomentWeightGradientsCorrected = settings.secondMomentWeightGradients[i] / (1 - std::pow(settings.beta2, epoch));
-        Eigen::VectorXd secondMomentBiasGradientsCorrected = settings.secondMomentBiasGradients[i] / (1 - std::pow(settings.beta2, epoch));
-
+        Eigen::MatrixXd secondMomentWeightGradientsCorrected = settings.secondMomentWeightGradients[i] / (1 - std::pow(settings.beta2, t));
+        Eigen::VectorXd secondMomentBiasGradientsCorrected = settings.secondMomentBiasGradients[i] / (1 - std::pow(settings.beta2, t));
 
         Eigen::MatrixXd newWeights = m_layers[i].GetWeights() - settings.learningRate * firstMomentWeightGradientsCorrected.cwiseQuotient((secondMomentWeightGradientsCorrected.cwiseSqrt().array() + settings.epsilon).matrix());  
         Eigen::VectorXd newBiases = m_layers[i].GetBiases() - settings.learningRate * firstMomentBiasGradientsCorrected.cwiseQuotient((secondMomentBiasGradientsCorrected.cwiseSqrt().array() + settings.epsilon).matrix());
 
-        
-        // if(i == 1 && epoch == 0)
-        //     exit(1);
 
         m_layers[i].SetWeights(newWeights);
         m_layers[i].SetBiases(newBiases);
@@ -149,6 +152,7 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
     }
     cost /= inputs.cols();
 }
+
 
 void NeuralNetwork::Backpropagate(const Eigen::VectorXd input, const Eigen::VectorXd& target, double learningRate, double& cost){
 

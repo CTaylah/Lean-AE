@@ -24,13 +24,15 @@ struct TrainingSettings{
     std::vector<Eigen::MatrixXd> firstMomentWeightGradients;
     std::vector<Eigen::VectorXd> firstMomentBiasGradients; 
 
+    std::vector<Eigen::MatrixXd> prevFirstMomentWeightGradients;
+    std::vector<Eigen::VectorXd> prevFirstMomentBiasGradients; 
+
     std::vector<Eigen::MatrixXd> secondMomentWeightGradients;
     std::vector<Eigen::VectorXd> secondMomentBiasGradients;
 
 };
 
 class NeuralNetwork {
-
     public:
         NeuralNetwork(std::vector<int> topology); 
 

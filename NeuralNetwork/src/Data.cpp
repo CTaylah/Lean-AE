@@ -4,7 +4,6 @@
 
 bool ReadMNISTImages(const std::string& filename, Eigen::Ref<Eigen::MatrixXi>& data){
 
-
     std::ifstream file(filename, std::ios::binary);
 
     if(file.is_open()){
