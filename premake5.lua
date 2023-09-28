@@ -1,6 +1,6 @@
 workspace "NeuralNetworks"
     configurations { "Debug", "Release", "DebugTest" }
-    includedirs { "vendor", "NeuralNetwork/include" }
+    includedirs { "vendor", "NeuralNetwork/include", "NeuralNetwork/src" }
    
 project "NeuralNetwork"
     language "C++"

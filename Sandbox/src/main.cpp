@@ -1,6 +1,6 @@
-#include "NeuralNetwork.h"
-#include "Data.h"
-#include "CrossValidation.h"
+#include "Model/NeuralNetwork.h"
+#include "Common/Data.h"
+#include "Testing/CrossValidation.h"
 
 #include <iostream>
 #include <ctime>
