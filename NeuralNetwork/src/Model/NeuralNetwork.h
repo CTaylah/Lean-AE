@@ -20,13 +20,6 @@ struct TrainingSettings{
     double beta2;
     double epsilon;
 
-
-    std::vector<Eigen::MatrixXd> firstMomentWeightGradients;
-    std::vector<Eigen::VectorXd> firstMomentBiasGradients; 
-
-    std::vector<Eigen::MatrixXd> secondMomentWeightGradients;
-    std::vector<Eigen::VectorXd> secondMomentBiasGradients;
-
 };
 
 class NeuralNetwork {
@@ -45,9 +38,20 @@ class NeuralNetwork {
 
         ~NeuralNetwork() = default;
     private:
+        struct MomentGradients{
+
+        std::vector<Eigen::MatrixXd> m_w;
+        std::vector<Eigen::VectorXd> m_b; 
+
+        std::vector<Eigen::MatrixXd> v_w;
+        std::vector<Eigen::VectorXd> v_b;
+
+
+        };
         void FeedForward(const Eigen::VectorXd& input);
         void BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, TrainingSettings settings, double& cost, double epoch);
 
+        MomentGradients m_momentGradients;
         std::vector<int> m_topology;
         std::vector<Layer> m_layers;
 

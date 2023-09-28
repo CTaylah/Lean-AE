@@ -24,16 +24,15 @@ int main(int argc, char** argv){
     Eigen::MatrixXd examplesDouble = examplesRef.cast<double>();
     examplesDouble = examplesDouble / 255.0;
 
-
     //For testing purposes, only using subset of data
-    Eigen::MatrixXd examplesSubset = examplesDouble.block(0, 0, examplesDouble.rows(), 200);
-
+    Eigen::MatrixXd examplesSubset = examplesDouble.block(0, 0, examplesDouble.rows(), 500);
 
     NeuralNetwork neuralNetwork({784, 392, 784});
-    TrainingSettings settings(120, 40, 0.00085);
+    TrainingSettings settings(70, 40, 0.00087);
     
-    std::cout << "here" << std::endl;
-    //neuralNetwork.Train(settings, examplesSubset, examplesSubset);
+    NeuralNetwork network2({784, 256, 128, 256, 784});
+
     MonteCarloCV(neuralNetwork, 0.9, examplesSubset, settings);
 
+    MonteCarloCV(network2, 0.9, examplesSubset, settings);
 }
