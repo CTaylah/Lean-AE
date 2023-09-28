@@ -7,7 +7,6 @@
 #include <fstream>
 
 
-//Stochastic Gradient Descent
 
 [[nodiscard]] bool ReadMNISTImages(const std::string& filename, Eigen::Ref<Eigen::MatrixXi>& data);
 

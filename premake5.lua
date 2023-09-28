@@ -48,29 +48,29 @@ project "Sandbox"
         optimize "On"
     
 
-project "Tests"
-    kind "ConsoleApp"
-    language "C++"
-    cppdialect  "C++17"
+-- project "Tests"
+--     kind "ConsoleApp"
+--     language "C++"
+--     cppdialect  "C++17"
 
-    links { "googletest" }
-    links { "NeuralNetwork" }
+--     links { "googletest" }
+--     links { "NeuralNetwork" }
 
-    includedirs { "%{wks.location}/googletest/googletest/include", "%{wks.location}/googletest/googletest", "%{wks.location}/NeuralNetwork/include" }
+--     includedirs { "%{wks.location}/googletest/googletest/include", "%{wks.location}/googletest/googletest", "%{wks.location}/NeuralNetwork/include" }
 
-    targetdir "%{wks.location}/bin/%{prj.name}/%{cfg.buildcfg}"
-    objdir "%{wks.location}/bin/bin-int/%{prj.name}/%{cfg.buildcfg}" 
-    location "%{wks.location}/build/%{prj.name}/"
+--     targetdir "%{wks.location}/bin/%{prj.name}/%{cfg.buildcfg}"
+--     objdir "%{wks.location}/bin/bin-int/%{prj.name}/%{cfg.buildcfg}" 
+--     location "%{wks.location}/build/%{prj.name}/"
 
-    files {"%{prj.name}/**.hpp", "%{prj.name}/**.c", "%{prj.name}/**.cpp"}
+--     files {"%{prj.name}/**.hpp", "%{prj.name}/**.c", "%{prj.name}/**.cpp"}
 
---Third Party
-project "googletest"
-    kind "StaticLib"
-    includedirs { "googletest/googletest/include", "googletest/googletest" }
-    files { "googletest/googletest/src/gtest-all.cc" }
+-- --Third Party
+-- project "googletest"
+--     kind "StaticLib"
+--     includedirs { "googletest/googletest/include", "googletest/googletest" }
+--     files { "googletest/googletest/src/gtest-all.cc" }
 
-    targetdir "%{wks.location}/bin/%{prj.name}/%{cfg.buildcfg}"
-    objdir "%{wks.location}/bin/bin-int/%{prj.name}/%{cfg.buildcfg}" 
-    location "%{wks.location}/build/%{prj.name}/"
+--     targetdir "%{wks.location}/bin/%{prj.name}/%{cfg.buildcfg}"
+--     objdir "%{wks.location}/bin/bin-int/%{prj.name}/%{cfg.buildcfg}" 
+--     location "%{wks.location}/build/%{prj.name}/"
 

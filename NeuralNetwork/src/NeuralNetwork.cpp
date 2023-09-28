@@ -35,15 +35,19 @@ void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inpu
         }
 
 
+    double numBatches = inputs.cols() / settings.batchSize;
+    double totalCost = 0.0;
     for(int epoch = 0; epoch < settings.epochs; epoch++){
         double cost = 0.0;
-        for(int i = 0; i < inputs.cols() / 100; i += settings.batchSize){
-            Eigen::MatrixXd batch = inputs.block(0, i, inputs.rows(), settings.batchSize);
+        for(int i = 0; i < numBatches; i++){
+            Eigen::MatrixXd batch = inputs.block(0, i * settings.batchSize, inputs.rows(), settings.batchSize);
             Eigen::MatrixXd batchTargets = targets.block(0, i, targets.rows(), settings.batchSize);
-
             BackpropagateBatch(batch, batchTargets, settings, cost, epoch);
+            
         }
-        std::cout << "Epoch: " << epoch << " Cost: " << cost << std::endl;
+        cost /= numBatches;
+        totalCost += cost;
+        std::cout << "Epoch: " << epoch << " Cost: " << totalCost / epoch << std::endl;
     }
 }
 
@@ -52,7 +56,7 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
     if(inputs.cols() != targets.cols())
         throw std::invalid_argument("NeuralNetwork::BackpropagateBatch: inputs and targets must have the same number of columns");
 
-    cost = 0.0;
+    double miniBatchCost = 0.0;
     
     std::vector<Eigen::MatrixXd> weightGradients(m_layers.size());
     std::vector<Eigen::VectorXd> biasGradients(m_layers.size());
@@ -103,97 +107,55 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
             }
             outputError = hiddenError;
         }
-        cost += Math::MeanSquaredError(outputLayer.GetActivations(), targets.col(i));
+        miniBatchCost += Math::MeanSquaredError(outputLayer.GetActivations(), targets.col(i));
     }
+    miniBatchCost /= inputs.cols();
+
+    cost += miniBatchCost;
+
     // #pragma omp critical
     {
-        for(int i = 0; i < m_layers.size(); i++){
-                weightGradients[i] = privateWeightGradients[i];
-                biasGradients[i] = privateBiasGradients[i];
+        for(int layerIndex = 1; layerIndex < m_layers.size(); layerIndex++){
+                weightGradients[layerIndex] = privateWeightGradients[layerIndex];
+                biasGradients[layerIndex] = privateBiasGradients[layerIndex];
             }
         }
     }
 
 
-    for(int i = 1; i < weightGradients.size(); i++){
-        weightGradients[i] /= inputs.cols();
-        biasGradients[i] /= inputs.cols();
+    for(int layerIndex = 1; layerIndex < weightGradients.size(); layerIndex++){
+        weightGradients[layerIndex] /= inputs.cols();
+        biasGradients[layerIndex] /= inputs.cols();
 
         //Github copilot garbledy goop that supposedly makes Adam work
         //https://arxiv.org/abs/1412.6980
 
         if(epoch == 0)
         {
-            m_layers[i].SetWeights(m_layers[i].GetWeights() - settings.learningRate * weightGradients[i]);
-            m_layers[i].SetBiases(m_layers[i].GetBiases() - settings.learningRate * biasGradients[i]);
+            m_layers[layerIndex].SetWeights(m_layers[layerIndex].GetWeights() - settings.learningRate * weightGradients[layerIndex]);
+            m_layers[layerIndex].SetBiases(m_layers[layerIndex].GetBiases() - settings.learningRate * biasGradients[layerIndex]);
             continue;
         }
         int t = epoch; //+ 1;
 
-        settings.firstMomentWeightGradients[i] = settings.beta1 * settings.firstMomentWeightGradients[i] + (1 - settings.beta1) * weightGradients[i];
-        settings.firstMomentBiasGradients[i] = settings.beta1 * settings.firstMomentBiasGradients[i] + (1 - settings.beta1) * biasGradients[i];
+        settings.firstMomentWeightGradients[layerIndex] = settings.beta1 * settings.firstMomentWeightGradients[layerIndex] + (1 - settings.beta1) * weightGradients[layerIndex];
+        settings.firstMomentBiasGradients[layerIndex] = settings.beta1 * settings.firstMomentBiasGradients[layerIndex] + (1 - settings.beta1) * biasGradients[layerIndex];
 
-        settings.secondMomentWeightGradients[i] = settings.beta2 * settings.secondMomentWeightGradients[i] + (1 - settings.beta2) * weightGradients[i].cwiseProduct(weightGradients[i]);
-        settings.secondMomentBiasGradients[i] = settings.beta2 * settings.secondMomentBiasGradients[i] + (1 - settings.beta2) * biasGradients[i].cwiseProduct(biasGradients[i]);
+        settings.secondMomentWeightGradients[layerIndex] = settings.beta2 * settings.secondMomentWeightGradients[layerIndex] + (1 - settings.beta2) * weightGradients[layerIndex].cwiseProduct(weightGradients[layerIndex]);
+        settings.secondMomentBiasGradients[layerIndex] = settings.beta2 * settings.secondMomentBiasGradients[layerIndex] + (1 - settings.beta2) * biasGradients[layerIndex].cwiseProduct(biasGradients[layerIndex]);
 
-        Eigen::MatrixXd firstMomentWeightGradientsCorrected = settings.firstMomentWeightGradients[i] / (1 - std::pow(settings.beta1, t));
-        Eigen::VectorXd firstMomentBiasGradientsCorrected = settings.firstMomentBiasGradients[i] / (1 - std::pow(settings.beta1, t));
+        Eigen::MatrixXd firstMomentWeightGradientsCorrected = settings.firstMomentWeightGradients[layerIndex] / (1 - std::pow(settings.beta1, t));
+        Eigen::VectorXd firstMomentBiasGradientsCorrected = settings.firstMomentBiasGradients[layerIndex] / (1 - std::pow(settings.beta1, t));
 
-        Eigen::MatrixXd secondMomentWeightGradientsCorrected = settings.secondMomentWeightGradients[i] / (1 - std::pow(settings.beta2, t));
-        Eigen::VectorXd secondMomentBiasGradientsCorrected = settings.secondMomentBiasGradients[i] / (1 - std::pow(settings.beta2, t));
+        Eigen::MatrixXd secondMomentWeightGradientsCorrected = settings.secondMomentWeightGradients[layerIndex] / (1 - std::pow(settings.beta2, t));
+        Eigen::VectorXd secondMomentBiasGradientsCorrected = settings.secondMomentBiasGradients[layerIndex] / (1 - std::pow(settings.beta2, t));
 
-        Eigen::MatrixXd newWeights = m_layers[i].GetWeights() - settings.learningRate * firstMomentWeightGradientsCorrected.cwiseQuotient((secondMomentWeightGradientsCorrected.cwiseSqrt().array() + settings.epsilon).matrix());  
-        Eigen::VectorXd newBiases = m_layers[i].GetBiases() - settings.learningRate * firstMomentBiasGradientsCorrected.cwiseQuotient((secondMomentBiasGradientsCorrected.cwiseSqrt().array() + settings.epsilon).matrix());
+        Eigen::MatrixXd newWeights = m_layers[layerIndex].GetWeights() - settings.learningRate * firstMomentWeightGradientsCorrected.cwiseQuotient((secondMomentWeightGradientsCorrected.cwiseSqrt().array() + settings.epsilon).matrix());  
+        Eigen::VectorXd newBiases = m_layers[layerIndex].GetBiases() - settings.learningRate * firstMomentBiasGradientsCorrected.cwiseQuotient((secondMomentBiasGradientsCorrected.cwiseSqrt().array() + settings.epsilon).matrix());
 
 
-        m_layers[i].SetWeights(newWeights);
-        m_layers[i].SetBiases(newBiases);
+        m_layers[layerIndex].SetWeights(newWeights);
+        m_layers[layerIndex].SetBiases(newBiases);
 
     }
-    cost /= inputs.cols();
 }
-
-
-void NeuralNetwork::Backpropagate(const Eigen::VectorXd input, const Eigen::VectorXd& target, double learningRate, double& cost){
-
-    FeedForward(input);
-    cost = Math::MeanSquaredError(m_layers.back().GetActivations(), target);
-
-    Layer& outputLayer = m_layers[m_layers.size() - 1];
-
-    Eigen::VectorXd c = (outputLayer.GetActivations() - target);
-    Eigen::VectorXd outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(c);
-
-
-    Eigen::MatrixXd outputWeightGradients = outputError * m_layers[m_layers.size() - 2].GetActivations().transpose();
-    outputWeightGradients *= learningRate;
-
-    Eigen::VectorXd outputBiasGradients = outputError; 
-    outputBiasGradients *= learningRate;
-   
-    outputLayer.SetWeights(outputLayer.GetWeights() - outputWeightGradients); 
-    outputLayer.SetBiases(outputLayer.GetBiases() - outputBiasGradients);
-
-    if (m_layers.size() == 2)
-        return;
-    
-    //Calculate the error for the hidden layers
-    for(int i = m_layers.size() - 2; i > 0; i--){
-        Layer& hiddenLayer = m_layers[i];
-        Layer& nextLayer = m_layers[i+1];
-
-        Eigen::VectorXd hiddenError = Math::LeakyReLUDerivative(hiddenLayer.GetWeightedSums()).cwiseProduct(nextLayer.GetWeights().transpose() * outputError);
-
-        Eigen::MatrixXd hiddenWeightGradients = hiddenError * m_layers[i-1].GetActivations().transpose();
-        hiddenWeightGradients *= learningRate;
-
-        Eigen::VectorXd hiddenBiasGradients = hiddenError;
-        hiddenBiasGradients *= learningRate;
-
-        hiddenLayer.SetWeights(hiddenLayer.GetWeights() - hiddenWeightGradients);
-        hiddenLayer.SetBiases(hiddenLayer.GetBiases() - hiddenBiasGradients);
-
-        outputError = hiddenError;
-    }
-}
-

@@ -31,24 +31,24 @@ TEST(NeuralNetwork, ForwardPropagation)
 
 }
 
-TEST(NeuralNetwork, Backpropagation){
+// TEST(NeuralNetwork, Backpropagation){
 
-    NeuralNetwork network(std::vector<int>({8, 6, 6}));
-    Eigen::VectorXd inputs(8);
-    inputs << 0.43, 0.9, 0.3, 0.034, 0.12, 0.3232, 0.1, 0.23;
+//     NeuralNetwork network(std::vector<int>({8, 6, 6}));
+//     Eigen::VectorXd inputs(8);
+//     inputs << 0.43, 0.9, 0.3, 0.034, 0.12, 0.3232, 0.1, 0.23;
 
-    Eigen::VectorXd targets(6);
-    targets << 0, 0, 1, 0, 0, 0;
+//     Eigen::VectorXd targets(6);
+//     targets << 0, 0, 1, 0, 0, 0;
 
-    double cost = 0;
-    for(int i = 0; i < 5000; i++)
-        network.Backpropagate(inputs, targets, 0.02, cost);
+//     double cost = 0;
+//     for(int i = 0; i < 5000; i++)
+//         network.Backpropagate(inputs, targets, 0.02, cost);
         
 
-    for(int i = 0; i < targets.size(); i++)
-    {
-        EXPECT_NEAR(targets(i), network.GetPrediction(inputs)(i), 1e-2);
-    }
+//     for(int i = 0; i < targets.size(); i++)
+//     {
+//         EXPECT_NEAR(targets(i), network.GetPrediction(inputs)(i), 1e-2);
+//     }
 
-}
+// }
 

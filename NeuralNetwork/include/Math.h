@@ -6,20 +6,6 @@
 
 
 namespace Math{
-    // inline double RandomDouble(double min, double max){
-
-    //     std::uniform_real_distribution<double> uniformReal(min,max);
-    //     std::default_random_engine randomEngine;
-    //     return uniformReal(randomEngine);
-    // }
-
-    // inlito int RandomInt(int min, int max){
-
-    //     std::uniform_int_distribution<int> uniformInt(min,max);
-    //     std::default_random_engine randomEngine;
-    //     return uniformInt(randomEngine);
-    // }
-
     inline double ReLU(double x){
         return x > 0 ? x : 0;
     }
@@ -81,7 +67,12 @@ namespace Math{
         return 0.5 * ((prediction - label).squaredNorm()) / prediction.size();
     }
 
-
+    inline void ShuffleMatrix(Eigen::Ref<Eigen::MatrixXd>& matrix){
+        for(int i = 0; i < matrix.cols(); i++){
+            int randomIndex = rand() % matrix.cols();
+            matrix.col(i).swap(matrix.col(randomIndex));
+        }
+    }
    
 }
 

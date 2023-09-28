@@ -1,5 +1,7 @@
 #include "NeuralNetwork.h"
 #include "Data.h"
+#include "CrossValidation.h"
+
 #include <iostream>
 #include <ctime>
 #include <omp.h>
@@ -23,22 +25,15 @@ int main(int argc, char** argv){
     examplesDouble = examplesDouble / 255.0;
 
 
-    std::cout<< omp_get_num_threads() << std::endl;
-    NeuralNetwork neuralNetwork({784, 256, 128, 256, 784});
-    TrainingSettings settings(90, 64, 0.00037);
-    neuralNetwork.Train(settings, examplesDouble, examplesDouble);
+    //For testing purposes, only using subset of data
+    Eigen::MatrixXd examplesSubset = examplesDouble.block(0, 0, examplesDouble.rows(), 200);
 
-    int index = rand() % 300;
-    index = 5;
 
-    std::cout << "index: " << index << std::endl;
-
-    double meanSquaredError = Math::MeanSquaredError(neuralNetwork.GetPrediction(examplesDouble.col(index)), examplesDouble.col(index));
-    std::cout << meanSquaredError << std::endl;
-
-    Eigen::VectorXd prediction = neuralNetwork.GetPrediction(examplesDouble.col(index));
+    NeuralNetwork neuralNetwork({784, 392, 784});
+    TrainingSettings settings(120, 40, 0.00085);
     
-    VectorToPPM((prediction * 255).cast<int>(), "Prediction");
-    VectorToPPM((examplesDouble.col(index) * 255).cast<int>(), "Input");
+    std::cout << "here" << std::endl;
+    //neuralNetwork.Train(settings, examplesSubset, examplesSubset);
+    MonteCarloCV(neuralNetwork, 0.9, examplesSubset, settings);
 
 }
