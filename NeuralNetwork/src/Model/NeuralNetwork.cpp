@@ -32,12 +32,15 @@ void NeuralNetwork::FeedForward(const Eigen::VectorXd& inputs){
 
 void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets){
 
+    
     if(inputs.cols() != targets.cols())
         throw std::invalid_argument("NeuralNetwork::Train: inputs and targets must have the same number of columns");
 
+    double tolMax = 0.00006;
 
     double numBatches = inputs.cols() / settings.batchSize;
     double totalCost = 0.0;
+    double previousCost = 0.0;
     for(int epoch = 0; epoch < settings.epochs; epoch++){
         double cost = 0.0;
         for(int i = 0; i < numBatches; i++){
@@ -48,6 +51,11 @@ void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inpu
         }
         cost /= numBatches;
         totalCost += cost;
+        double epochCost = totalCost / (epoch + 1);
+        double tolerance = abs(epochCost - previousCost); 
+        if(tolerance < tolMax)
+            break;
+        previousCost = epochCost;
         if(epoch % 10 == 0)
         std::cout << "Epoch: " << epoch << " Cost: " << totalCost / epoch << std::endl;
     }
@@ -64,12 +72,12 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
     std::vector<Eigen::VectorXd> biasGradients(m_layers.size());
 
 
-//        #pragma omp parallel
+        #pragma omp parallel
     {
         std::vector<Eigen::MatrixXd> privateWeightGradients(m_layers.size());
         std::vector<Eigen::VectorXd> privateBiasGradients(m_layers.size());
+    
 
- //       #pragma omp for
     for(int i = 0; i < inputs.cols(); i++){
         FeedForward(inputs.col(i));
         
@@ -90,6 +98,7 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
         }
     
         //Calculate gradient vectors and matrices for hdden layers
+
         for(int j = m_layers.size() - 2; j > 0; j--){
             Layer& hiddenLayer = m_layers[j];
             Layer& nextLayer = m_layers[j+1];
@@ -115,7 +124,7 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
 
     cost += miniBatchCost;
 
-  //  #pragma omp critical
+    #pragma omp critical
     {
         for(int layerIndex = 1; layerIndex < m_layers.size(); layerIndex++){
                 weightGradients[layerIndex] = privateWeightGradients[layerIndex];

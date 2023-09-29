@@ -25,14 +25,14 @@ int main(int argc, char** argv){
     examplesDouble = examplesDouble / 255.0;
 
     //For testing purposes, only using subset of data
-    Eigen::MatrixXd examplesSubset = examplesDouble.block(0, 0, examplesDouble.rows(), 500);
+    Eigen::MatrixXd examplesSubset = examplesDouble.block(0, 0, examplesDouble.rows(), 5600);
 
-    NeuralNetwork neuralNetwork({784, 392, 784});
-    TrainingSettings settings(70, 40, 0.00087);
+    NeuralNetwork neuralNetwork({784, 162, 784});
+    TrainingSettings settings(70, 20, 0.00087);
     
-    NeuralNetwork network2({784, 256, 128, 256, 784});
+    NeuralNetwork network2({784, 356, 784});
 
-    MonteCarloCV(neuralNetwork, 0.9, examplesSubset, settings);
+    MonteCarloCV(neuralNetwork, 0.8, examplesSubset, settings);
 
-    MonteCarloCV(network2, 0.9, examplesSubset, settings);
+    //MonteCarloCV(network2, 0.8, examplesSubset, settings);
 }

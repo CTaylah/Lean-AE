@@ -38,8 +38,6 @@ bool ReadMNISTImages(const std::string& filename, Eigen::Ref<Eigen::MatrixXi>& d
     else{
         return false;
     }
-
-
 }
 
 
