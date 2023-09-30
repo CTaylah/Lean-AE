@@ -8,11 +8,11 @@ NeuralNetwork::NeuralNetwork(std::vector<int> topology) : m_topology(topology){
 
     m_layers.push_back(Layer(0, m_topology[0]));
 
-    for(int i = 1; i < m_topology.size(); i++){
+    for(size_t i = 1; i < m_topology.size(); i++){
         m_layers.push_back(Layer(m_topology[i-1], m_topology[i]));
     }
 
-    for(int i = 0; i < m_layers.size(); i++){
+    for(size_t i = 0; i < m_layers.size(); i++){
         m_momentGradients.m_w.push_back(Eigen::MatrixXd::Zero(m_layers[i].GetWeights().rows(), m_layers[i].GetWeights().cols()));
         m_momentGradients.m_b.push_back(Eigen::VectorXd::Zero(m_layers[i].GetBiases().rows()));
 
@@ -25,14 +25,13 @@ NeuralNetwork::NeuralNetwork(std::vector<int> topology) : m_topology(topology){
 void NeuralNetwork::FeedForward(const Eigen::VectorXd& inputs){
     Eigen::VectorXd l_inputs = inputs;
 
-    for(int i = 0; i < m_layers.size(); i++){
+    for(size_t i = 0; i < m_layers.size(); i++){
         l_inputs = m_layers[i].FeedForward(l_inputs);
     }
 }
 
 void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets){
 
-    
     if(inputs.cols() != targets.cols())
         throw std::invalid_argument("NeuralNetwork::Train: inputs and targets must have the same number of columns");
 
@@ -43,7 +42,7 @@ void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inpu
     double previousCost = 0.0;
     for(int epoch = 0; epoch < settings.epochs; epoch++){
         double cost = 0.0;
-        for(int i = 0; i < numBatches; i++){
+        for(size_t i = 0; i < numBatches; i++){
             Eigen::MatrixXd batch = inputs.block(0, i * settings.batchSize, inputs.rows(), settings.batchSize);
             Eigen::MatrixXd batchTargets = targets.block(0, i * settings.batchSize, targets.rows(), settings.batchSize);
             BackpropagateBatch(batch, batchTargets, settings, cost, epoch);
@@ -65,76 +64,88 @@ void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inpu
 void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, TrainingSettings settings, double& cost, double epoch){
     if(inputs.cols() != targets.cols())
         throw std::invalid_argument("NeuralNetwork::BackpropagateBatch: inputs and targets must have the same number of columns");
-
     double miniBatchCost = 0.0;
-    
+
     std::vector<Eigen::MatrixXd> weightGradients(m_layers.size());
     std::vector<Eigen::VectorXd> biasGradients(m_layers.size());
+    for(size_t i = 0; i < m_layers.size(); i++){
+        weightGradients[i] = Eigen::MatrixXd::Zero(m_layers[i].GetWeights().rows(), m_layers[i].GetWeights().cols());
+        biasGradients[i] = Eigen::VectorXd::Zero(m_layers[i].GetBiases().rows());
+    }
 
 
-        #pragma omp parallel
-    {
-        std::vector<Eigen::MatrixXd> privateWeightGradients(m_layers.size());
-        std::vector<Eigen::VectorXd> privateBiasGradients(m_layers.size());
-    
 
-    for(int i = 0; i < inputs.cols(); i++){
-        FeedForward(inputs.col(i));
-        
-        Layer& outputLayer = m_layers[m_layers.size() - 1];
-        Eigen::VectorXd c = (outputLayer.GetActivations() - targets.col(i)); 
-        Eigen::VectorXd outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(c);
+    #pragma omp parallel 
+    { 
+        std::vector<Eigen::MatrixXd> privateWeightGradients = weightGradients;
+        std::vector<Eigen::VectorXd> privateBiasGradients = biasGradients;
 
-        Eigen::MatrixXd outputWeightGradients = outputError * m_layers[m_layers.size() - 2].GetActivations().transpose();
-        //This might need to be single threaded
-        if(i == 0){
-            privateWeightGradients[m_layers.size() - 1] = outputWeightGradients;
-            privateBiasGradients[m_layers.size() - 1] = outputError;
-        }
-        
-        else{
-            privateWeightGradients[m_layers.size() - 1] += outputWeightGradients;
-            privateBiasGradients[m_layers.size() - 1] += outputError;
-        }
-    
-        //Calculate gradient vectors and matrices for hdden layers
+        #pragma omp for 
+        for(size_t i = 0; i < inputs.cols(); i++){
 
-        for(int j = m_layers.size() - 2; j > 0; j--){
-            Layer& hiddenLayer = m_layers[j];
-            Layer& nextLayer = m_layers[j+1];
+            #pragma omp critical
+            {
+                FeedForward(inputs.col(i));
+            }
+            
+            Layer& outputLayer = m_layers[m_layers.size() - 1];
+            Eigen::VectorXd c = (outputLayer.GetActivations() - targets.col(i)); 
+            Eigen::VectorXd outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(c);
 
-            Eigen::VectorXd hiddenError = Math::LeakyReLUDerivative(hiddenLayer.GetWeightedSums()).cwiseProduct(nextLayer.GetWeights().transpose() * outputError);
+            Eigen::MatrixXd outputWeightGradients = outputError * m_layers[m_layers.size() - 2].GetActivations().transpose();
 
-            Eigen::MatrixXd hiddenWeightGradients = hiddenError * m_layers[j-1].GetActivations().transpose();
-            Eigen::VectorXd hiddenBiasGradients = hiddenError;
-
+          
+            #pragma omp critical
+            {
             if(i == 0){
-                privateWeightGradients[j] = hiddenWeightGradients;
-                privateBiasGradients[j] = hiddenBiasGradients;
+                privateWeightGradients[m_layers.size() - 1] = outputWeightGradients;
+                privateBiasGradients[m_layers.size() - 1] = outputError;
             }
             else{
-                privateWeightGradients[j] += hiddenWeightGradients;
-                privateBiasGradients[j] += hiddenBiasGradients;
+                privateWeightGradients[m_layers.size() - 1] += outputWeightGradients;
+                privateBiasGradients[m_layers.size() - 1] += outputError;
             }
-            outputError = hiddenError;
-        }
-        miniBatchCost += Math::MeanSquaredError(outputLayer.GetActivations(), targets.col(i));
-    }
-    miniBatchCost /= inputs.cols();
-
-    cost += miniBatchCost;
-
-    #pragma omp critical
-    {
-        for(int layerIndex = 1; layerIndex < m_layers.size(); layerIndex++){
-                weightGradients[layerIndex] = privateWeightGradients[layerIndex];
-                biasGradients[layerIndex] = privateBiasGradients[layerIndex];
             }
+            //Calculate gradient vectors and matrices for hdden layers
+
+            for(size_t j = m_layers.size() - 2; j > 0; j--){
+                Layer& hiddenLayer = m_layers[j];
+                Layer& nextLayer = m_layers[j+1];
+
+                Eigen::VectorXd hiddenError = Math::LeakyReLUDerivative(hiddenLayer.GetWeightedSums()).cwiseProduct(nextLayer.GetWeights().transpose() * outputError);
+
+                Eigen::MatrixXd hiddenWeightGradients = hiddenError * m_layers[j-1].GetActivations().transpose();
+                Eigen::VectorXd hiddenBiasGradients = hiddenError;
+
+                #pragma omp critical
+                {     
+                if(i == 0){
+                    privateWeightGradients[j] = hiddenWeightGradients;
+                    privateBiasGradients[j] = hiddenBiasGradients;
+                }
+                else{
+                    privateWeightGradients[j] += hiddenWeightGradients;
+                    privateBiasGradients[j] += hiddenBiasGradients;
+                }
+                }
+                
+                outputError = hiddenError;
+            }
+
+            #pragma omp critical
+            {
+                for(size_t layerIndex = 1; layerIndex < m_layers.size(); layerIndex++){
+                    weightGradients[layerIndex] += privateWeightGradients[layerIndex];
+                    biasGradients[layerIndex] += privateBiasGradients[layerIndex];
+                }
+            } 
         }
+
+
     }
 
-
-    for(int layerIndex = 1; layerIndex < weightGradients.size(); layerIndex++){
+    #pragma omp parallel for    
+    for(size_t layerIndex = 1; layerIndex < m_layers.size(); layerIndex++){
         weightGradients[layerIndex] /= inputs.cols();
         biasGradients[layerIndex] /= inputs.cols();
 
@@ -175,4 +186,12 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
         m_layers[layerIndex].SetBiases(newBiases);
 
     }
+
+    for(size_t sample = 0; sample < inputs.cols(); sample++){
+        miniBatchCost += Math::MeanSquaredError(inputs.col(sample), GetPrediction(inputs.col(sample))); 
+    }
+    miniBatchCost /= inputs.cols();
+    cost += miniBatchCost;
+
+    
 }
