@@ -10,7 +10,7 @@ int main(int argc, char** argv){
 
     srand(time(NULL));
 
-    int num_threads = 6;
+    int num_threads = 1;
 
     Eigen::initParallel();
     omp_set_num_threads(num_threads);
@@ -31,10 +31,10 @@ int main(int argc, char** argv){
     examplesDouble = examplesDouble / 255.0;
 
     //For testing purposes, only using subset of data
-    Eigen::MatrixXd examplesSubset = examplesDouble.block(0, 0, examplesDouble.rows(), 50000);
+    Eigen::MatrixXd examplesSubset = examplesDouble.block(0, 0, examplesDouble.rows(), 60000);
 
     NeuralNetwork neuralNetwork({784, 162, 784});
-    TrainingSettings settings(70, 6, 0.00087);
+    TrainingSettings settings(70, 24, 0.00087);
     
     NeuralNetwork network2({784, 356, 784});
 
