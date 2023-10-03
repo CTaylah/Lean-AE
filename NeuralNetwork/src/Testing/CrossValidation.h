@@ -14,7 +14,7 @@ double Test(NeuralNetwork network, const Eigen::MatrixXd& testingSet, bool verbo
 double MonteCarloCV(NeuralNetwork network, TrainingSettings settings, Eigen::MatrixXd& examples, double trainingPercent);
 
 //Uses two threads, training and testing each network on a different thread
-std::vector<double> Compare(NeuralNetwork network1, TrainingSettings settings1, NeuralNetwork network2, TrainingSettings settings2, 
+bool Compare(NeuralNetwork network1, TrainingSettings settings1, NeuralNetwork network2, TrainingSettings settings2, 
     Eigen::MatrixXd& dataSet, double trainingPercent);
 
 std::vector<double> Compare(std::vector<NeuralNetwork> networks, TrainingSettings settings, 

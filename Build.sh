@@ -21,6 +21,8 @@ fi
 ./premake/premake5 gmake2
 
 # Hack to enable openmp
-# sed -i '33i ALL_LDFLAGS += -fopenmp' build/Sandbox/Makefile
-# sed -i '20i ALL_LDFLAGS += -fopenmp' build/NeuralNetwork/Makefile
+sed -i '33i ALL_LDFLAGS += -fopenmp' build/Sandbox/Makefile
+sed -i '20i ALL_LDFLAGS += -fopenmp' build/NeuralNetwork/Makefile
+sed -i '33i ALL_CXXFLAGS += -fopenmp' build/Sandbox/Makefile
+sed -i '20i ALL_CXXFLAGS += -fopenmp' build/NeuralNetwork/Makefile
 make config=$build_type

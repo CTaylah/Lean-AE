@@ -47,7 +47,8 @@ double Testing::MonteCarloCV(NeuralNetwork network, TrainingSettings settings, E
 
 }
 
-std::vector<double> Testing::Compare(NeuralNetwork network1, TrainingSettings settings1, NeuralNetwork network2, TrainingSettings settings2, 
+//Return true if network1 is had a lower cost than network2
+bool Testing::Compare(NeuralNetwork network1, TrainingSettings settings1, NeuralNetwork network2, TrainingSettings settings2, 
     Eigen::MatrixXd& dataSet, double trainingPercent)
 {
 
@@ -64,26 +65,28 @@ std::vector<double> Testing::Compare(NeuralNetwork network1, TrainingSettings se
             network2TestCost = MonteCarloCV(network2, settings2, dataSet, trainingPercent);
         }
     }
+    return network1TestCost < network2TestCost;
 }
 //Rename MonteCarloCV
 std::vector<double> Testing::Compare(std::vector<NeuralNetwork> networks, TrainingSettings settings, 
     Eigen::MatrixXd& dataSet, double trainingPercent)
 {
     std::vector<double> costs;
-    
-    
-    //dont use for, need to keep track of networks in vector, use thread IDs
-    #pragma omp parallel for
     for(size_t network = 0; network < networks.size(); network++)
     {
-        double cost = MonteCarloCV(networks[network], settings, dataSet, trainingPercent);
-        std::cout << cost << std::endl;
-        #pragma omp critical
-        {
-        costs.push_back(cost);
-        }
-        
+        costs.push_back(0.0);
     }
+    
+    #pragma omp parallel for 
+    for(size_t network = 0; network < networks.size(); network++)
+    {
+        int threadID = omp_get_thread_num();
+        double cost = MonteCarloCV(networks[threadID], settings, dataSet, trainingPercent);
+        std::cout << cost << std::endl;
+        costs[threadID] = cost; 
+    }
+
+    
     return costs;
 
 }

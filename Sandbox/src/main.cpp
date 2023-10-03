@@ -10,10 +10,15 @@ int main(int argc, char** argv){
 
     srand(time(NULL));
 
-    int num_threads = 2;
+    int num_threads = 3;
+    omp_set_num_threads(num_threads);
+    #pragma omp parallel
+    {
+        std::cout << omp_get_thread_num() << std::endl;
+    }
+    return 1;
 
     Eigen::initParallel();
-    omp_set_num_threads(num_threads);
     Eigen::setNbThreads(num_threads);
 
     Eigen::MatrixXi examples(784, 60000);
