@@ -30,7 +30,7 @@ void NeuralNetwork::FeedForward(const Eigen::VectorXd& inputs){
     }
 }
 
-void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets){
+void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, bool verbose){
 
     if(inputs.cols() != targets.cols())
         throw std::invalid_argument("NeuralNetwork::Train: inputs and targets must have the same number of columns");
@@ -55,7 +55,7 @@ void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inpu
         if(tolerance < tolMax)
             break;
         previousCost = epochCost;
-        if(epoch % 10 == 0)
+        if(verbose && epoch % 10 == 0)
         std::cout << "Epoch: " << epoch << " Cost: " << totalCost / epoch << std::endl;
     }
 }

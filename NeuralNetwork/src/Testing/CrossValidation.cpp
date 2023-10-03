@@ -1,6 +1,9 @@
 #include "CrossValidation.h"
 
-void Test(NeuralNetwork network, const Eigen::MatrixXd& testingSet){
+#include <omp.h>
+
+
+double Testing::Test(NeuralNetwork network, const Eigen::MatrixXd& testingSet, bool verbose){
     Eigen::VectorXd prediction;
     Eigen::VectorXd target;
     double cost = 0.0;
@@ -11,20 +14,20 @@ void Test(NeuralNetwork network, const Eigen::MatrixXd& testingSet){
     }
 
     cost /= testingSet.cols();
+    if(verbose){
     std::cout << "Test cost: " << cost << std::endl;
 
-    //Randomly select an example to visualize
-    int index = 5;
+    int index = 0;
     Eigen::VectorXd predictionExample = network.GetPrediction(testingSet.col(index));
     std::cout << "Prediction Cost: " << Math::MeanSquaredError(predictionExample, testingSet.col(index)) << std::endl;
     
     VectorToPPM((predictionExample * 255).cast<int>(), "Prediction");
     VectorToPPM((testingSet.col(index) * 255).cast<int>(), "Input");
-
+    }
+    return cost;
 }
 
-
-void MonteCarloCV(NeuralNetwork network, double trainingPercent, Eigen::MatrixXd& examples, TrainingSettings settings)
+double Testing::MonteCarloCV(NeuralNetwork network, TrainingSettings settings, Eigen::MatrixXd& examples, double trainingPercent)
 {
     if(trainingPercent < 0 || trainingPercent > 1)
         throw std::invalid_argument("MonteCarloCV: trainingPercent must be between 0 and 1");
@@ -39,8 +42,50 @@ void MonteCarloCV(NeuralNetwork network, double trainingPercent, Eigen::MatrixXd
     Eigen::MatrixXd testingSet = examples.block(0, trainingSize, examples.rows(), testSize);
 
     network.Train(settings, trainingSet, trainingSet);
-    Test(network, testingSet);
-
+    double testCost = Test(network, testingSet);
+    return testCost;
 
 }
+
+std::vector<double> Testing::Compare(NeuralNetwork network1, TrainingSettings settings1, NeuralNetwork network2, TrainingSettings settings2, 
+    Eigen::MatrixXd& dataSet, double trainingPercent)
+{
+
+    double network1TestCost = 0.0;
+    double network2TestCost = 0.0;
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        {
+            network1TestCost = MonteCarloCV(network1, settings1, dataSet, trainingPercent);
+        }
+        #pragma omp section
+        {
+            network2TestCost = MonteCarloCV(network2, settings2, dataSet, trainingPercent);
+        }
+    }
+}
+//Rename MonteCarloCV
+std::vector<double> Testing::Compare(std::vector<NeuralNetwork> networks, TrainingSettings settings, 
+    Eigen::MatrixXd& dataSet, double trainingPercent)
+{
+    std::vector<double> costs;
+    
+    
+    //dont use for, need to keep track of networks in vector, use thread IDs
+    #pragma omp parallel for
+    for(size_t network = 0; network < networks.size(); network++)
+    {
+        double cost = MonteCarloCV(networks[network], settings, dataSet, trainingPercent);
+        std::cout << cost << std::endl;
+        #pragma omp critical
+        {
+        costs.push_back(cost);
+        }
+        
+    }
+    return costs;
+
+}
+
 
