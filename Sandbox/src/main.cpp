@@ -28,10 +28,10 @@ int main(int argc, char** argv){
     examplesDouble = examplesDouble / 255.0;
 
     //For testing purposes, only using subset of data
-    Eigen::MatrixXd examplesSubset = examplesDouble.block(0, 0, examplesDouble.rows(), 3500);
+    Eigen::MatrixXd examplesSubset = examplesDouble.block(0, 0, examplesDouble.rows(), 60000);
 
     NeuralNetwork network1({784, 162, 784});
-    TrainingSettings settings(70, 24, 0.00087);
+    TrainingSettings settings(10, 24, 0.00087);
     NeuralNetwork network2({784, 1, 784});
 
 

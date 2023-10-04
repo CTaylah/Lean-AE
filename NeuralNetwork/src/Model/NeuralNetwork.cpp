@@ -54,8 +54,8 @@ void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inpu
         totalCost += cost;
         double epochCost = totalCost / (epoch + 1);
         double tolerance = abs(epochCost - previousCost); 
-        if(tolerance < tolMax)
-            break;
+        // if(tolerance < tolMax)
+        //     break;
         previousCost = epochCost;
         if(verbose && epoch % 10 == 0)
         std::cout << "Epoch: " << epoch << " Cost: " << totalCost / epoch << std::endl;
@@ -74,58 +74,55 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
         weightGradients[i] = Eigen::MatrixXd::Zero(m_layers[i].GetWeights().rows(), m_layers[i].GetWeights().cols());
         biasGradients[i] = Eigen::VectorXd::Zero(m_layers[i].GetBiases().rows());
     }
+    
 
-    Eigen::MatrixXd* weightGradientsPtr = &weightGradients[0];
-    Eigen::VectorXd* biasGradientsPtr = &biasGradients[0];
-
-    int N = m_layers.size() - 1;
-    std::vector<Layer> layers = m_layers;
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(size_t i = 0; i < inputs.cols(); i++){
-        Eigen::VectorXd l_inputs = inputs.col(i);
-        std::vector<Layer> layers = m_layers;
-        for(size_t j = 0; j < layers.size(); j++){
-            l_inputs = layers[j].FeedForward(l_inputs);
+    
+        #pragma omp critical
+        {
+        FeedForward(inputs.col(i));
         }
-        
-        // #pragma omp critical
-        // {
-        // FeedForward(inputs.col(i));
-        // }
+
         Eigen::VectorXd outputError = Eigen::VectorXd::Zero(m_layers.back().GetActivations().rows());
-        for(size_t j = layers.size() - 1; j > 0; j--){
+        for(size_t j = m_layers.size() - 1; j > 0; j--){
             //Output layer calculations are different
             if(j == m_layers.size() - 1){
-                Layer& outputLayer = layers[layers.size() - 1];
+                Layer& outputLayer = m_layers[m_layers.size() - 1];
                 Eigen::VectorXd c = (outputLayer.GetActivations() - targets.col(i)); 
                 outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(c);
-                Eigen::MatrixXd outputWeightGradients = outputError * layers[layers.size() - 2].GetActivations().transpose();
+                Eigen::MatrixXd outputWeightGradients = outputError * m_layers[m_layers.size() - 2].GetActivations().transpose();
 
-                weightGradientsPtr[j] += outputWeightGradients;
-                biasGradientsPtr[j] += outputError;
-
+                #pragma omp critical
+                {
+                weightGradients[j] += outputWeightGradients;
+                biasGradients[j] += outputError;
+                }
                 continue;
             }
 
-            Layer& hiddenLayer = layers[j];
-            Layer& nextLayer = layers[j+1];
+            Layer& hiddenLayer = m_layers[j];
+            Layer& nextLayer = m_layers[j+1];
             Eigen::VectorXd hiddenError = Math::LeakyReLUDerivative(hiddenLayer.GetWeightedSums()).cwiseProduct(nextLayer.GetWeights().transpose() * outputError);
 
-            Eigen::MatrixXd hiddenWeightGradients = hiddenError * layers[j-1].GetActivations().transpose();
+            Eigen::MatrixXd hiddenWeightGradients = hiddenError * m_layers[j-1].GetActivations().transpose();
             Eigen::VectorXd hiddenBiasGradients = hiddenError;
             
-            weightGradientsPtr[j] += hiddenWeightGradients;
-            biasGradientsPtr[j] += hiddenBiasGradients;
-            
+            #pragma omp critical
+            {
+
+            weightGradients[j] += hiddenWeightGradients;
+            biasGradients[j] += hiddenBiasGradients;
+ 
+            }
+           
             outputError = hiddenError;
         }
         
     }
 
 
-    
-
-    #pragma omp parallel for    
+    //#pragma omp parallel for    
     for(size_t layerIndex = 1; layerIndex < m_layers.size(); layerIndex++){
         weightGradients[layerIndex] /= inputs.cols();
         biasGradients[layerIndex] /= inputs.cols();
