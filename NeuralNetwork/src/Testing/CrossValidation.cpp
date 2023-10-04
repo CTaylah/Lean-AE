@@ -77,12 +77,11 @@ std::vector<double> Testing::Compare(std::vector<NeuralNetwork> networks, Traini
         costs.push_back(0.0);
     }
     
-    #pragma omp parallel for 
+    //#pragma omp parallel for 
     for(size_t network = 0; network < networks.size(); network++)
     {
         int threadID = omp_get_thread_num();
         double cost = MonteCarloCV(networks[threadID], settings, dataSet, trainingPercent);
-        std::cout << cost << std::endl;
         costs[threadID] = cost; 
     }
 

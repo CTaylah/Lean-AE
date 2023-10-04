@@ -1,6 +1,8 @@
 #include "NeuralNetwork.h"
 #include <Eigen/StdVector>
 #include <omp.h>
+#include <chrono>
+
 
 NeuralNetwork::NeuralNetwork(std::vector<int> topology) : m_topology(topology){
     if(m_topology.size() < 2)
@@ -73,76 +75,55 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
         biasGradients[i] = Eigen::VectorXd::Zero(m_layers[i].GetBiases().rows());
     }
 
+    Eigen::MatrixXd* weightGradientsPtr = &weightGradients[0];
+    Eigen::VectorXd* biasGradientsPtr = &biasGradients[0];
 
-
-    #pragma omp parallel 
-    { 
-        std::vector<Eigen::MatrixXd> privateWeightGradients = weightGradients;
-        std::vector<Eigen::VectorXd> privateBiasGradients = biasGradients;
-
-        #pragma omp for 
-        for(size_t i = 0; i < inputs.cols(); i++){
-
-            #pragma omp critical
-            {
-                FeedForward(inputs.col(i));
-            }
-            
-            Layer& outputLayer = m_layers[m_layers.size() - 1];
-            Eigen::VectorXd c = (outputLayer.GetActivations() - targets.col(i)); 
-            Eigen::VectorXd outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(c);
-
-            Eigen::MatrixXd outputWeightGradients = outputError * m_layers[m_layers.size() - 2].GetActivations().transpose();
-
-          
-            #pragma omp critical
-            {
-            if(i == 0){
-                privateWeightGradients[m_layers.size() - 1] = outputWeightGradients;
-                privateBiasGradients[m_layers.size() - 1] = outputError;
-            }
-            else{
-                privateWeightGradients[m_layers.size() - 1] += outputWeightGradients;
-                privateBiasGradients[m_layers.size() - 1] += outputError;
-            }
-            }
-            //Calculate gradient vectors and matrices for hdden layers
-
-            for(size_t j = m_layers.size() - 2; j > 0; j--){
-                Layer& hiddenLayer = m_layers[j];
-                Layer& nextLayer = m_layers[j+1];
-
-                Eigen::VectorXd hiddenError = Math::LeakyReLUDerivative(hiddenLayer.GetWeightedSums()).cwiseProduct(nextLayer.GetWeights().transpose() * outputError);
-
-                Eigen::MatrixXd hiddenWeightGradients = hiddenError * m_layers[j-1].GetActivations().transpose();
-                Eigen::VectorXd hiddenBiasGradients = hiddenError;
-
-                #pragma omp critical
-                {     
-                if(i == 0){
-                    privateWeightGradients[j] = hiddenWeightGradients;
-                    privateBiasGradients[j] = hiddenBiasGradients;
-                }
-                else{
-                    privateWeightGradients[j] += hiddenWeightGradients;
-                    privateBiasGradients[j] += hiddenBiasGradients;
-                }
-                }
-                
-                outputError = hiddenError;
-            }
-
-            #pragma omp critical
-            {
-                for(size_t layerIndex = 1; layerIndex < m_layers.size(); layerIndex++){
-                    weightGradients[layerIndex] += privateWeightGradients[layerIndex];
-                    biasGradients[layerIndex] += privateBiasGradients[layerIndex];
-                }
-            } 
+    int N = m_layers.size() - 1;
+    std::vector<Layer> layers = m_layers;
+    #pragma omp parallel for
+    for(size_t i = 0; i < inputs.cols(); i++){
+        Eigen::VectorXd l_inputs = inputs.col(i);
+        std::vector<Layer> layers = m_layers;
+        for(size_t j = 0; j < layers.size(); j++){
+            l_inputs = layers[j].FeedForward(l_inputs);
         }
+        
+        // #pragma omp critical
+        // {
+        // FeedForward(inputs.col(i));
+        // }
+        Eigen::VectorXd outputError = Eigen::VectorXd::Zero(m_layers.back().GetActivations().rows());
+        for(size_t j = layers.size() - 1; j > 0; j--){
+            //Output layer calculations are different
+            if(j == m_layers.size() - 1){
+                Layer& outputLayer = layers[layers.size() - 1];
+                Eigen::VectorXd c = (outputLayer.GetActivations() - targets.col(i)); 
+                outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(c);
+                Eigen::MatrixXd outputWeightGradients = outputError * layers[layers.size() - 2].GetActivations().transpose();
 
+                weightGradientsPtr[j] += outputWeightGradients;
+                biasGradientsPtr[j] += outputError;
 
+                continue;
+            }
+
+            Layer& hiddenLayer = layers[j];
+            Layer& nextLayer = layers[j+1];
+            Eigen::VectorXd hiddenError = Math::LeakyReLUDerivative(hiddenLayer.GetWeightedSums()).cwiseProduct(nextLayer.GetWeights().transpose() * outputError);
+
+            Eigen::MatrixXd hiddenWeightGradients = hiddenError * layers[j-1].GetActivations().transpose();
+            Eigen::VectorXd hiddenBiasGradients = hiddenError;
+            
+            weightGradientsPtr[j] += hiddenWeightGradients;
+            biasGradientsPtr[j] += hiddenBiasGradients;
+            
+            outputError = hiddenError;
+        }
+        
     }
+
+
+    
 
     #pragma omp parallel for    
     for(size_t layerIndex = 1; layerIndex < m_layers.size(); layerIndex++){
