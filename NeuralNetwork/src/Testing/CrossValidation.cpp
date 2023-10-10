@@ -27,7 +27,7 @@ double Testing::Test(NeuralNetwork network, const Eigen::MatrixXd& testingSet, b
     return cost;
 }
 
-double Testing::MonteCarloCV(NeuralNetwork network, TrainingSettings settings, Eigen::MatrixXd& examples, double trainingPercent)
+double Testing::MonteCarloCV(NeuralNetwork network, TrainingSettings settings, Eigen::MatrixXd& examples, double trainingPercent, bool verbose)
 {
     if(trainingPercent < 0 || trainingPercent > 1)
         throw std::invalid_argument("MonteCarloCV: trainingPercent must be between 0 and 1");
@@ -42,7 +42,7 @@ double Testing::MonteCarloCV(NeuralNetwork network, TrainingSettings settings, E
     Eigen::MatrixXd testingSet = examples.block(0, trainingSize, examples.rows(), testSize);
 
     network.Train(settings, trainingSet, trainingSet);
-    double testCost = Test(network, testingSet);
+    double testCost = Test(network, testingSet, verbose);
     return testCost;
 
 }

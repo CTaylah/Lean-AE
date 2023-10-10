@@ -7,6 +7,8 @@
 #include <vector>
 #include <iostream>
 
+
+
 struct TrainingSettings{
     TrainingSettings(int epochs, int batchSize, double learningRate, double beta1=0.9, double beta2=0.999, double epsilon=1e-8) 
         : learningRate(learningRate), epochs(epochs), batchSize(batchSize), beta1(beta1), beta2(beta2), epsilon(epsilon) {}
@@ -30,7 +32,6 @@ class NeuralNetwork {
 
         void Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, bool verbose=false);
 
-
         Eigen::VectorXd GetPrediction(const Eigen::VectorXd& input) {
             FeedForward(input);
             return m_layers[m_layers.size() - 1].GetActivations();
@@ -46,7 +47,6 @@ class NeuralNetwork {
         std::vector<Eigen::MatrixXd> v_w;
         std::vector<Eigen::VectorXd> v_b;
 
-
         };
         void FeedForward(const Eigen::VectorXd& input);
         void BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, TrainingSettings settings, 
@@ -58,3 +58,4 @@ class NeuralNetwork {
 
 
 };
+

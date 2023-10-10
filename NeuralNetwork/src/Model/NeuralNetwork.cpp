@@ -48,7 +48,6 @@ void NeuralNetwork::Train(TrainingSettings settings, const Eigen::MatrixXd& inpu
             Eigen::MatrixXd batch = inputs.block(0, i * settings.batchSize, inputs.rows(), settings.batchSize);
             Eigen::MatrixXd batchTargets = targets.block(0, i * settings.batchSize, targets.rows(), settings.batchSize);
             BackpropagateBatch(batch, batchTargets, settings, cost, epoch);
-            
         }
         cost /= numBatches;
         totalCost += cost;
@@ -74,16 +73,24 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
         weightGradients[i] = Eigen::MatrixXd::Zero(m_layers[i].GetWeights().rows(), m_layers[i].GetWeights().cols());
         biasGradients[i] = Eigen::VectorXd::Zero(m_layers[i].GetBiases().rows());
     }
+
+    std::vector<std::vector<Eigen::MatrixXd>> weightGradientsThreaded(omp_get_max_threads());
+    std::vector<std::vector<Eigen::VectorXd>> biasGradientsThreaded(omp_get_max_threads());
+
+    for(size_t i = 0; i < omp_get_max_threads(); i++){
+        weightGradientsThreaded[i] = weightGradients;
+        biasGradientsThreaded[i] = biasGradients;
+    }
     
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(size_t i = 0; i < inputs.cols(); i++){
     
         #pragma omp critical
         {
         FeedForward(inputs.col(i));
         }
-
+        
         Eigen::VectorXd outputError = Eigen::VectorXd::Zero(m_layers.back().GetActivations().rows());
         for(size_t j = m_layers.size() - 1; j > 0; j--){
             //Output layer calculations are different
@@ -93,11 +100,9 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
                 outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(c);
                 Eigen::MatrixXd outputWeightGradients = outputError * m_layers[m_layers.size() - 2].GetActivations().transpose();
 
-                #pragma omp critical
-                {
-                weightGradients[j] += outputWeightGradients;
-                biasGradients[j] += outputError;
-                }
+                weightGradientsThreaded[omp_get_thread_num()][j] += outputWeightGradients;
+                biasGradientsThreaded[omp_get_thread_num()][j] += outputError;
+                
                 continue;
             }
 
@@ -108,21 +113,23 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
             Eigen::MatrixXd hiddenWeightGradients = hiddenError * m_layers[j-1].GetActivations().transpose();
             Eigen::VectorXd hiddenBiasGradients = hiddenError;
             
-            #pragma omp critical
-            {
-
-            weightGradients[j] += hiddenWeightGradients;
-            biasGradients[j] += hiddenBiasGradients;
- 
-            }
-           
+            weightGradientsThreaded[omp_get_thread_num()][j] += hiddenWeightGradients;
+            biasGradientsThreaded[omp_get_thread_num()][j] += hiddenBiasGradients;
+          
             outputError = hiddenError;
         }
         
     }
 
+    for(size_t thread = 0; thread < omp_get_max_threads(); thread++){
+        for(size_t layer = 0; layer < m_layers.size(); layer++){
+            weightGradients[layer] += weightGradientsThreaded[thread][layer];
+            biasGradients[layer] += biasGradientsThreaded[thread][layer];
+        }
+    }
 
-    //#pragma omp parallel for    
+
+    #pragma omp parallel for    
     for(size_t layerIndex = 1; layerIndex < m_layers.size(); layerIndex++){
         weightGradients[layerIndex] /= inputs.cols();
         biasGradients[layerIndex] /= inputs.cols();

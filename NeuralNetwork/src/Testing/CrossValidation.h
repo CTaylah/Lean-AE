@@ -11,7 +11,7 @@ double Test(NeuralNetwork network, const Eigen::MatrixXd& testingSet, bool verbo
 
 //trainingPercent specifies what percentage of the data will be used for training
 //Returns the average cost of the network on the testing set
-double MonteCarloCV(NeuralNetwork network, TrainingSettings settings, Eigen::MatrixXd& examples, double trainingPercent);
+double MonteCarloCV(NeuralNetwork network, TrainingSettings settings, Eigen::MatrixXd& examples, double trainingPercent, bool verbose=false);
 
 //Uses two threads, training and testing each network on a different thread
 bool Compare(NeuralNetwork network1, TrainingSettings settings1, NeuralNetwork network2, TrainingSettings settings2, 

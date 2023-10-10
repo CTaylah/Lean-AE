@@ -7,14 +7,27 @@
 #include <vector>
 #include <iostream>
 
+enum class ActivationFunction{
+    SIGMOID,
+    RELU,
+    LEAKY_RELU,
+    SOFTPLUS
+
+};
+
 class Layer {
 
     public:
         //numInputs: number of neurons in previous layer
-        Layer(int numInputs, int size) : m_size(size){
+        Layer(int numInputs, int size, ActivationFunction actFunc=ActivationFunction::LEAKY_RELU) 
+            : m_size(size), m_activationFunction(actFunc){
+
             if(numInputs < 0 || size <= 0){
+                std::cout << numInputs << std::endl;
+                std::cout << size << std::endl;
+                std::cout << std::endl;
                 throw std::invalid_argument("Layer: invalid number of inputs or size");
-            }
+            } 
 
             m_weights = Eigen::MatrixXd::Random(size, numInputs) * sqrt(2.0 / numInputs);
             m_biases = Eigen::VectorXd::Zero(size);
@@ -42,6 +55,7 @@ class Layer {
         }
 
     private:
+        ActivationFunction m_activationFunction;
         //Number of rows = number of neurons
         Eigen::MatrixXd m_weights;
         Eigen::VectorXd m_biases;
