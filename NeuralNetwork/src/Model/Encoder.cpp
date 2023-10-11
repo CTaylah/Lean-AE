@@ -29,7 +29,15 @@ QParams Encoder::Encode(const Eigen::VectorXd& inputs){
     return QParams{mu, logvar};
 }
 
-void Encoder::Backpropagate(Eigen::VectorXd inputs, Eigen::VectorXd target, Eigen::VectorXd decoderError, QParams qParams, TrainingSettings settings, int epoch)
+std::vector<QParams> Encoder::Encode(const Eigen::MatrixXd& inputs){
+    std::vector<QParams> qParams;
+    for(size_t i = 0; i < inputs.cols(); i++){
+        qParams.push_back(Encode(inputs.col(i)));
+    }
+    return qParams;
+}
+
+void Encoder::Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& target, Eigen::VectorXd decoderError, QParams qParams, TrainingSettings settings, int epoch)
 {
     
 
@@ -50,6 +58,8 @@ void Encoder::Backpropagate(Eigen::VectorXd inputs, Eigen::VectorXd target, Eige
     Eigen::VectorXd outputErrorRC;
     Eigen::VectorXd outputErrorDL;
 
+
+for(size_t i = 0; i < inputs.cols(); i++){
     for(size_t layer = m_layers.size() - 1; layer > 0; layer--)
     {
         if(layer == m_layers.size() - 1){
@@ -106,11 +116,11 @@ void Encoder::Backpropagate(Eigen::VectorXd inputs, Eigen::VectorXd target, Eige
         outputErrorDL = hiddenErrorDL;
 
     } 
-
+}
     std::vector<Eigen::MatrixXd> weightGradients;
     std::vector<Eigen::VectorXd> biasGradients;
 
-    double klWeight = 0.1;
+    double klWeight = 0.000;
     for(size_t i = 0; i < MSEweightGradients.size(); i++)
     {
         weightGradients.push_back(klWeight * KLweightGradients[i] + MSEweightGradients[i]);
@@ -123,39 +133,39 @@ void Encoder::Backpropagate(Eigen::VectorXd inputs, Eigen::VectorXd target, Eige
 
         //https://arxiv.org/abs/1412.6980
 
-        // if(epoch == 0)
-        // {
+        if(epoch == 0)
+        {
             m_layers[layerIndex].SetWeights(m_layers[layerIndex].GetWeights() - settings.learningRate * weightGradients[layerIndex]);
             m_layers[layerIndex].SetBiases(m_layers[layerIndex].GetBiases() - settings.learningRate * biasGradients[layerIndex]);
-            // continue;
-        // }
+            continue;
+        }
 
-        // int t = epoch;
+        int t = epoch;
 
-        // m_momentGradients.m_w[layerIndex] = settings.beta1 * m_momentGradients.m_w[layerIndex] + (1 - settings.beta1) * weightGradients[layerIndex];
-        // m_momentGradients.m_b[layerIndex] = settings.beta1 * m_momentGradients.m_b[layerIndex] + (1 - settings.beta1) * biasGradients[layerIndex];
+        m_momentGradients.m_w[layerIndex] = settings.beta1 * m_momentGradients.m_w[layerIndex] + (1 - settings.beta1) * weightGradients[layerIndex];
+        m_momentGradients.m_b[layerIndex] = settings.beta1 * m_momentGradients.m_b[layerIndex] + (1 - settings.beta1) * biasGradients[layerIndex];
 
-        // m_momentGradients.v_w[layerIndex] = settings.beta2 * m_momentGradients.v_w[layerIndex] 
-        //     + (1 - settings.beta2) * weightGradients[layerIndex].cwiseProduct(weightGradients[layerIndex]);
+        m_momentGradients.v_w[layerIndex] = settings.beta2 * m_momentGradients.v_w[layerIndex] 
+            + (1 - settings.beta2) * weightGradients[layerIndex].cwiseProduct(weightGradients[layerIndex]);
 
-        // m_momentGradients.v_b[layerIndex] = settings.beta2 * m_momentGradients.v_b[layerIndex] 
-        //     + (1 - settings.beta2) * biasGradients[layerIndex].cwiseProduct(biasGradients[layerIndex]);
+        m_momentGradients.v_b[layerIndex] = settings.beta2 * m_momentGradients.v_b[layerIndex] 
+            + (1 - settings.beta2) * biasGradients[layerIndex].cwiseProduct(biasGradients[layerIndex]);
 
-        // Eigen::MatrixXd m_w_hat = m_momentGradients.m_w[layerIndex] / (1 - std::pow(settings.beta1, t));
-        // Eigen::VectorXd m_b_hat = m_momentGradients.m_b[layerIndex] / (1 - std::pow(settings.beta1, t));
+        Eigen::MatrixXd m_w_hat = m_momentGradients.m_w[layerIndex] / (1 - std::pow(settings.beta1, t));
+        Eigen::VectorXd m_b_hat = m_momentGradients.m_b[layerIndex] / (1 - std::pow(settings.beta1, t));
 
-        // Eigen::MatrixXd v_w_hat = m_momentGradients.v_w[layerIndex] / (1 - std::pow(settings.beta2, t));
-        // Eigen::VectorXd v_b_hat = m_momentGradients.v_b[layerIndex] / (1 - std::pow(settings.beta2, t));
+        Eigen::MatrixXd v_w_hat = m_momentGradients.v_w[layerIndex] / (1 - std::pow(settings.beta2, t));
+        Eigen::VectorXd v_b_hat = m_momentGradients.v_b[layerIndex] / (1 - std::pow(settings.beta2, t));
 
-        // Eigen::MatrixXd newWeights = m_layers[layerIndex].GetWeights() 
-        //     - settings.learningRate * m_w_hat.cwiseQuotient((v_w_hat.cwiseSqrt().array() + settings.epsilon).matrix());  
+        Eigen::MatrixXd newWeights = m_layers[layerIndex].GetWeights() 
+            - settings.learningRate * m_w_hat.cwiseQuotient((v_w_hat.cwiseSqrt().array() + settings.epsilon).matrix());  
 
-        // Eigen::VectorXd newBiases = m_layers[layerIndex].GetBiases() 
-        //     - settings.learningRate * m_b_hat.cwiseQuotient((v_b_hat.cwiseSqrt().array() + settings.epsilon).matrix());
+        Eigen::VectorXd newBiases = m_layers[layerIndex].GetBiases() 
+            - settings.learningRate * m_b_hat.cwiseQuotient((v_b_hat.cwiseSqrt().array() + settings.epsilon).matrix());
 
 
-        // m_layers[layerIndex].SetWeights(newWeights);
-        // m_layers[layerIndex].SetBiases(newBiases);
+        m_layers[layerIndex].SetWeights(newWeights);
+        m_layers[layerIndex].SetBiases(newBiases);
 
     }
 }

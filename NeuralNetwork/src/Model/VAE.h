@@ -16,10 +16,13 @@ class VAE
         void Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, bool verbose=false);
         Eigen::VectorXd GetPrediction(const Eigen::VectorXd& input);
         Eigen::VectorXd FeedForward(const Eigen::VectorXd& inputs);
-        void Backpropagate(const Eigen::VectorXd& inputs, TrainingSettings settings, 
+        void Backpropagate(const Eigen::MatrixXd& inputs, TrainingSettings settings, 
+            double& cost, double epoch);
+        void BackpropagateBatch(const Eigen::VectorXd& inputs, TrainingSettings settings, 
             double& cost, double epoch);
     private:
-        Eigen::VectorXd calculateLatent(Eigen::VectorXd means, Eigen::VectorXd logVariances);
+        Eigen::VectorXd CalculateLatent(const Eigen::VectorXd& means, const Eigen::VectorXd& logVariances);
+        
     
     Encoder m_encoder;
     Decoder m_decoder;

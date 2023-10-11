@@ -15,7 +15,7 @@ class Encoder
 {
     public:
         Encoder(std::vector<unsigned int> layers);
-        void Backpropagate(Eigen::VectorXd inputs, Eigen::VectorXd target, Eigen::VectorXd decoderError, QParams qParams, 
+        void Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::VectorXd& target, Eigen::VectorXd decoderError, QParams qParams, 
             TrainingSettings settings, int epoch);
         QParams Encode(const Eigen::VectorXd& input);
     private:
