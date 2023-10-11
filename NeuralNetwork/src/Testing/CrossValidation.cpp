@@ -41,8 +41,8 @@ double Testing::MonteCarloCV(NeuralNetwork network, TrainingSettings settings, E
     Eigen::MatrixXd trainingSet = examples.block(0, 0, examples.rows(), trainingSize);
     Eigen::MatrixXd testingSet = examples.block(0, trainingSize, examples.rows(), testSize);
 
-    network.Train(settings, trainingSet, trainingSet);
-    double testCost = Test(network, testingSet);
+    network.Train(settings, trainingSet, trainingSet, true);
+    double testCost = Test(network, testingSet, true);
     return testCost;
 
 }

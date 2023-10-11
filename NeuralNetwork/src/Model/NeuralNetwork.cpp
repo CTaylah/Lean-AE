@@ -75,15 +75,12 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
         biasGradients[i] = Eigen::VectorXd::Zero(m_layers[i].GetBiases().rows());
     }
     
-
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(size_t i = 0; i < inputs.cols(); i++){
-    
         #pragma omp critical
         {
-        FeedForward(inputs.col(i));
+            FeedForward(inputs.col(i));
         }
-
         Eigen::VectorXd outputError = Eigen::VectorXd::Zero(m_layers.back().GetActivations().rows());
         for(size_t j = m_layers.size() - 1; j > 0; j--){
             //Output layer calculations are different
