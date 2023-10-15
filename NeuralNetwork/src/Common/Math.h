@@ -165,7 +165,7 @@ namespace Math{
         }
     }
 
-    inline Eigen::VectorXd genGaussianVector(int size, double mean, double stddev)
+    inline Eigen::VectorXd GenGaussianVector(int size, double mean, double stddev)
     {
         Eigen::VectorXd samples(size);
         

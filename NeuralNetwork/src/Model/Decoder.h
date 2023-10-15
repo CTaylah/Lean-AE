@@ -7,8 +7,9 @@ class Decoder
     public:
         Decoder(std::vector<unsigned int> layers);
         //Laten variable Z
-        Eigen::VectorXd Decode(const Eigen::VectorXd& inputs);
-        Eigen::VectorXd Backpropagate(Eigen::VectorXd latent, Eigen::VectorXd target, TrainingSettings settings, int epoch);
+        Eigen::VectorXd Decode(const Eigen::VectorXd& latent);
+        std::vector<Eigen::VectorXd> Backpropagate(const Eigen::MatrixXd& latent, const Eigen::MatrixXd& target, 
+            TrainingSettings settings, int epoch);
     private:
         std::vector<Layer> m_layers;
 

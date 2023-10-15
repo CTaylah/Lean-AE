@@ -7,17 +7,15 @@ struct QParams
     Eigen::VectorXd mu;
     Eigen::VectorXd logVar;
     Eigen::VectorXd eps;
-
-    Eigen::VectorXd z;
 };
 
 class Encoder
 {
     public:
         Encoder(std::vector<unsigned int> layers);
-        void Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::VectorXd& target, Eigen::VectorXd decoderError, QParams qParams, 
+        void Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& target, std::vector<Eigen::VectorXd> decoderError, std::vector<QParams> qParams, 
             TrainingSettings settings, int epoch);
-        QParams Encode(const Eigen::VectorXd& input);
+        QParams Encode(const Eigen::MatrixXd& input);
     private:
         std::vector<Layer> m_layers;
         struct MomentGradients{

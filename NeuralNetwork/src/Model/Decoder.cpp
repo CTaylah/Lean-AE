@@ -28,7 +28,8 @@ Eigen::VectorXd Decoder::Decode(const Eigen::VectorXd& inputs) {
     return m_layers.back().GetActivations();
 }
 
-Eigen::VectorXd Decoder::Backpropagate(const Eigen::MatrixXd& latent, const Eigen::MatrixXd& targets, TrainingSettings settings, int epoch){
+std::vector<Eigen::VectorXd> Decoder::Backpropagate(const Eigen::MatrixXd& latent, const Eigen::MatrixXd& targets, 
+    TrainingSettings settings, int epoch){
     std::vector<Eigen::MatrixXd> weightGradients(m_layers.size());
     std::vector<Eigen::VectorXd> biasGradients(m_layers.size());
 
@@ -39,16 +40,20 @@ Eigen::VectorXd Decoder::Backpropagate(const Eigen::MatrixXd& latent, const Eige
 
     std::vector<std::vector<Eigen::MatrixXd>> weightGradientsThreaded(omp_get_max_threads());
     std::vector<std::vector<Eigen::VectorXd>> biasGradientsThreaded(omp_get_max_threads());
+    std::vector<Eigen::VectorXd> decodeErrorPerInput(latent.cols());
 
     for(size_t i = 0; i < omp_get_max_threads(); i++){
         weightGradientsThreaded[i] = weightGradients;
         biasGradientsThreaded[i] = biasGradients;
     }
 
-    Eigen::VectorXd outputError = Eigen::VectorXd::Zero(m_layers.back().GetActivations().rows());
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for(size_t i = 0; i < latent.cols(); i++){
-    
+        #pragma omp critical
+        {
+            Decode(latent.col(i));
+        }
+        Eigen::VectorXd outputError = Eigen::VectorXd::Zero(m_layers.back().GetActivations().rows());
         for(size_t j = m_layers.size() - 1; j > 0; j--){
             //Output layer calculations are different
             if(j == m_layers.size() - 1){
@@ -76,6 +81,7 @@ Eigen::VectorXd Decoder::Backpropagate(const Eigen::MatrixXd& latent, const Eige
             outputError = hiddenError;
         }
         
+        decodeErrorPerInput[i] = m_layers[1].GetWeights().transpose() * outputError;
     }
 
     for(size_t thread = 0; thread < omp_get_max_threads(); thread++){
@@ -129,8 +135,7 @@ Eigen::VectorXd Decoder::Backpropagate(const Eigen::MatrixXd& latent, const Eige
 
     }
 
-        outputError = m_layers[1].GetWeights().transpose() * outputError;
 
-    return outputError;
+    return decodeErrorPerInput;
 
 }

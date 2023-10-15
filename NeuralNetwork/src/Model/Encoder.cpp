@@ -17,27 +17,32 @@ Encoder::Encoder(std::vector<unsigned int> topology)
     }
 }
 
-QParams Encoder::Encode(const Eigen::VectorXd& inputs){
+QParams Encoder::Encode(const Eigen::MatrixXd& inputs){
     Eigen::VectorXd l_inputs = inputs;
 
+    for(size_t i = 0; i < inputs.cols(); i++){
+
+    }
     for(size_t i = 0; i < m_layers.size(); i++){
         l_inputs = m_layers[i].FeedForward(l_inputs);
     }
 
     Eigen::VectorXd logvar = l_inputs; 
     Eigen::VectorXd mu = m_layers.back().GetWeightedSums();
-    return QParams{mu, logvar};
+    Eigen::VectorXd eps = Math::GenGaussianVector(mu.size(), 0, 1);
+    return QParams{mu, logvar, eps};
 }
 
-std::vector<QParams> Encoder::Encode(const Eigen::MatrixXd& inputs){
-    std::vector<QParams> qParams;
-    for(size_t i = 0; i < inputs.cols(); i++){
-        qParams.push_back(Encode(inputs.col(i)));
-    }
-    return qParams;
-}
+// QParams Encoder::Encode(const Eigen::MatrixXd& inputs){
+//    sQParams qParams;
+//     for(size_t i = 0; i < inputs.cols(); i++){
+//         qParams.push_back(Encode(inputs.col(i)));
+//     }
+//     return qParams;
+// }
 
-void Encoder::Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& target, Eigen::VectorXd decoderError, QParams qParams, TrainingSettings settings, int epoch)
+void Encoder::Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& target, 
+    std::vector<Eigen::VectorXd> decoderError, std::vector<QParams> qParams, TrainingSettings settings, int epoch)
 {
     
 
@@ -60,23 +65,27 @@ void Encoder::Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd
 
 
 for(size_t i = 0; i < inputs.cols(); i++){
+    #pragma omp critical
+    {
+        Encode(inputs.col(i));
+    }
     for(size_t layer = m_layers.size() - 1; layer > 0; layer--)
     {
         if(layer == m_layers.size() - 1){
-            Eigen::VectorXd variance = Math::UndoLog(qParams.logVar);
+            Eigen::VectorXd variance = Math::UndoLog(qParams[i].logVar);
 
-            Eigen::VectorXd halfLogVariance = qParams.logVar * 0.5; 
+            Eigen::VectorXd halfLogVariance = qParams[i].logVar * 0.5; 
             Eigen::VectorXd e_halfLog = halfLogVariance.array().exp().matrix();
             Layer& outputLayer = m_layers[m_layers.size() - 1];
             Eigen::VectorXd del_dkl = Math::SoftplusDerivative(outputLayer.GetWeightedSums());
-            Eigen::VectorXd dz_dlv = 0.5 * qParams.eps.cwiseProduct(variance.cwiseInverse()).cwiseProduct(qParams.mu).cwiseProduct(e_halfLog);
-            outputErrorRC = del_dkl.cwiseProduct(dz_dlv).cwiseProduct(decoderError); 
+            Eigen::VectorXd dz_dlv = 0.5 * qParams[i].eps.cwiseProduct(variance.cwiseInverse()).cwiseProduct(qParams[i].mu).cwiseProduct(e_halfLog);
+            outputErrorRC = del_dkl.cwiseProduct(dz_dlv).cwiseProduct(decoderError[i]); 
             outputErrorRC = del_dkl.cwiseProduct(outputErrorRC);
             
 
             Eigen::MatrixXd outputWeightGradientsRC = outputErrorRC * m_layers[m_layers.size() - 2].GetActivations().transpose();
-
-            Eigen::VectorXd dDL_dV = 0.5 * (variance.array().inverse() - ((qParams.mu.array().square() + 0.0).cwiseProduct(variance.array().inverse().square())));
+                                                                                                        //What the hell is this? idk
+            Eigen::VectorXd dDL_dV = 0.5 * (variance.array().inverse() - ((qParams[i].mu.array().square() + 0.0).cwiseProduct(variance.array().inverse().square())));
             Eigen::VectorXd dV_dLV = variance;
             Eigen::VectorXd dDL_dLV = dDL_dV.cwiseProduct(dV_dLV);
 
@@ -114,13 +123,14 @@ for(size_t i = 0; i < inputs.cols(); i++){
 
         outputErrorRC = hiddenErrorRC;
         outputErrorDL = hiddenErrorDL;
-
     } 
 }
     std::vector<Eigen::MatrixXd> weightGradients;
     std::vector<Eigen::VectorXd> biasGradients;
 
     double klWeight = 0.000;
+    if(epoch > 90)
+        klWeight = 0.0001 * (epoch - 100);
     for(size_t i = 0; i < MSEweightGradients.size(); i++)
     {
         weightGradients.push_back(klWeight * KLweightGradients[i] + MSEweightGradients[i]);

@@ -10,7 +10,7 @@
 
 
 struct TrainingSettings{
-    TrainingSettings(int epochs, int batchSize, double learningRate, double beta1=0.9, double beta2=0.999, double epsilon=1e-8) 
+    TrainingSettings(int epochs, int batchSize, double learningRate, double beta1=0.99, double beta2=0.999, double epsilon=1e-8) 
         : learningRate(learningRate), epochs(epochs), batchSize(batchSize), beta1(beta1), beta2(beta2), epsilon(epsilon) {}
 
     double learningRate;
