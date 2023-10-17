@@ -30,23 +30,9 @@ int main(int argc, char** argv){
     //For testing purposes, only using subset of data
     Eigen::MatrixXd examplesSubset = examplesDouble.block(0, 0, examplesDouble.rows(), 10000);
 
-    NeuralNetwork network1({784, 162, 784});
+    // NeuralNetwork network1({784, 162, 784});
     TrainingSettings settings(10, num_threads * 12, 0.00087);
-    NeuralNetwork network2({784, 1, 784});
 
-
-    std::vector<NeuralNetwork> networks = {network1, network2};
-
-    // auto start = std::chrono::high_resolution_clock::now();
-
-    // // double cost = Testing::MonteCarloCV(network1, settings, examplesSubset, 0.7, true);
-
-    // auto stop = std::chrono::high_resolution_clock::now();
-    // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start);
-    // std::cout << duration.count() << std::endl;
-
-    // std::cout << "Cost: " << cost << std::endl;
-    //MonteCarloCV(network2, 0.8, examplesSubset, settings);
 
     std::vector<unsigned int> encoderTopology = {784, 500, 256};
     std::vector<unsigned int> decoderTopology = {256, 500, 784};
