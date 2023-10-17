@@ -15,6 +15,17 @@ Eigen::VectorXd VAE::CalculateLatent(const QParams& qParams){
     return qParams.mu + (qParams.eps.array() * qParams.logVar.array().exp().sqrt()).matrix();
 }
 
+void VAE::Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, bool verbose){
+    double klWeight = 0;
+    int numBatches = inputs.cols() / settings.batchSize;
+    for(int epoch = 0; epoch < settings.epochs; epoch++){
+        for(size_t i = 0; i < numBatches; i++)
+        {
+            Eigen::MatrixXd batch = inputs.block(0, i * settings.batchSize, inputs.rows(), settings.batchSize);
+            
+        }
+    }
+}
 void VAE::Backpropagate(const Eigen::MatrixXd& inputs, TrainingSettings settings, 
     double& cost, double epoch, double klWeight)
 {

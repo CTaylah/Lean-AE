@@ -12,7 +12,12 @@ class VAE
 {
     public:
         VAE(std::vector<unsigned int> encoderLayers, std::vector<unsigned int> decoderLayers) : 
-            m_encoder(encoderLayers), m_decoder(decoderLayers) {m_latentSize = encoderLayers.back();};
+            m_encoder(encoderLayers), m_decoder(decoderLayers) {
+                if(encoderLayers.back() != decoderLayers.front())
+                    throw std::invalid_argument("encoderLayers.back() must equal decoderLayers.front()");
+
+                m_latentSize = encoderLayers.back();
+                }
 
         void Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, bool verbose=false);
         
