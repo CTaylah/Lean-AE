@@ -52,10 +52,11 @@ int main(int argc, char** argv){
     std::vector<unsigned int> decoderTopology = {256, 500, 784};
     VAE vae(encoderTopology, decoderTopology);
     double cost;
+    double klWeight = 0;
     for(int epoch = 0; epoch < 180; epoch++){
         for(int i = 0; i < examplesSubset.cols(); i++)
         {
-            vae.Backpropagate(examplesSubset.col(i), settings, cost, epoch);
+            vae.Backpropagate(examplesSubset.col(i), settings, cost, epoch, klWeight);
         }
         std::cout << epoch << std::endl;
         std::cout << cost << std::endl;
@@ -68,7 +69,7 @@ int main(int argc, char** argv){
 
     QParams qParams = vae.m_qParams;
     qParams.eps = Math::GenGaussianVector(qParams.mu.size(), 0, 1);
-    Eigen::VectorXd latent = vae.CalculateLatent(qParams);
-    Eigen::VectorXd prediction2 = vae.m_decoder.Decode(latent);
+    Eigen::VectorXd latent = VAE::CalculateLatent(qParams);
+    Eigen::VectorXd prediction2 = vae.Decode(latent);
     VectorToPPM((prediction2 * 255).cast<int>(), "output2");
 }

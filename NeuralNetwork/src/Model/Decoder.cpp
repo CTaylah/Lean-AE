@@ -40,6 +40,9 @@ std::vector<Eigen::VectorXd> Decoder::Backpropagate(const Eigen::MatrixXd& laten
 
     std::vector<std::vector<Eigen::MatrixXd>> weightGradientsThreaded(omp_get_max_threads());
     std::vector<std::vector<Eigen::VectorXd>> biasGradientsThreaded(omp_get_max_threads());
+
+    //Gradient that needs to get passed through the decoder and into the encoder
+    //One per each sample in the minibatch
     std::vector<Eigen::VectorXd> decodeErrorPerInput(latent.cols());
 
     for(size_t i = 0; i < omp_get_max_threads(); i++){
@@ -58,8 +61,8 @@ std::vector<Eigen::VectorXd> Decoder::Backpropagate(const Eigen::MatrixXd& laten
             //Output layer calculations are different
             if(j == m_layers.size() - 1){
                 Layer& outputLayer = m_layers[m_layers.size() - 1];
-                Eigen::VectorXd c = (outputLayer.GetActivations() - targets.col(i)); 
-                outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(c);
+                Eigen::VectorXd dRC_dx_hat = (outputLayer.GetActivations() - targets.col(i)); 
+                outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(dRC_dx_hat);
                 Eigen::MatrixXd outputWeightGradients = outputError * m_layers[m_layers.size() - 2].GetActivations().transpose();
 
                 weightGradientsThreaded[omp_get_thread_num()][j] += outputWeightGradients;
@@ -85,19 +88,31 @@ std::vector<Eigen::VectorXd> Decoder::Backpropagate(const Eigen::MatrixXd& laten
     }
 
     for(size_t thread = 0; thread < omp_get_max_threads(); thread++){
-        for(size_t layer = 0; layer < m_layers.size(); layer++){
-            weightGradients[layer] += weightGradientsThreaded[thread][layer];
-            biasGradients[layer] += biasGradientsThreaded[thread][layer];
+        for(size_t layerIndex = 0; layerIndex < m_layers.size(); layerIndex++){
+            weightGradients[layerIndex] += weightGradientsThreaded[thread][layerIndex];
+            biasGradients[layerIndex] += biasGradientsThreaded[thread][layerIndex];
+
+            weightGradients[layerIndex] /= latent.cols();
+            biasGradients[layerIndex] /= latent.cols();
         }
     }
 
+    UpdateParameters(weightGradients, biasGradients, settings, epoch);
+
+    return decodeErrorPerInput;
+
+}
 
 
+void Decoder::UpdateParameters(const std::vector<Eigen::MatrixXd>& weightGradients, const std::vector<Eigen::VectorXd>& biasGradients, const TrainingSettings& settings, int epoch){
+    
     for(size_t layerIndex = 1; layerIndex < m_layers.size(); layerIndex++){
-        weightGradients[layerIndex] /= latent.cols();
-        biasGradients[layerIndex] /= latent.cols();
-
-        //https://arxiv.org/abs/1412.6980
+        if(epoch == 0)
+        {
+            m_layers[layerIndex].SetWeights(m_layers[layerIndex].GetWeights() - settings.learningRate * weightGradients[layerIndex]);
+            m_layers[layerIndex].SetBiases(m_layers[layerIndex].GetBiases() - settings.learningRate * biasGradients[layerIndex]);
+        }
+       //https://arxiv.org/abs/1412.6980
 
         if(epoch == 0)
         {
@@ -134,8 +149,4 @@ std::vector<Eigen::VectorXd> Decoder::Backpropagate(const Eigen::MatrixXd& laten
         m_layers[layerIndex].SetBiases(newBiases);
 
     }
-
-
-    return decodeErrorPerInput;
-
 }

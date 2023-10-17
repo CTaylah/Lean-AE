@@ -13,6 +13,9 @@ class Decoder
     private:
         std::vector<Layer> m_layers;
 
+        void UpdateParameters(const std::vector<Eigen::MatrixXd>& weightGradients, const std::vector<Eigen::VectorXd>& biasGradients, 
+            const TrainingSettings& settings, int epoch);
+
         struct MomentGradients{
         std::vector<Eigen::MatrixXd> m_w;
         std::vector<Eigen::VectorXd> m_b; 

@@ -8,6 +8,7 @@ Encoder::Encoder(std::vector<unsigned int> topology)
     }
     m_layers.push_back(Layer(topology[topology.size() - 2], topology.back(), ActivationFunction::SOFTPLUS));
 
+    //Moment gradients are initialized to 0
     for(size_t i = 0; i < m_layers.size(); i++){
         m_momentGradients.m_w.push_back(Eigen::MatrixXd::Zero(m_layers[i].GetWeights().rows(), m_layers[i].GetWeights().cols()));
         m_momentGradients.m_b.push_back(Eigen::VectorXd::Zero(m_layers[i].GetBiases().rows()));
@@ -20,13 +21,11 @@ Encoder::Encoder(std::vector<unsigned int> topology)
 QParams Encoder::Encode(const Eigen::MatrixXd& inputs){
     Eigen::VectorXd l_inputs = inputs;
 
-    for(size_t i = 0; i < inputs.cols(); i++){
-
-    }
     for(size_t i = 0; i < m_layers.size(); i++){
         l_inputs = m_layers[i].FeedForward(l_inputs);
     }
 
+    //Dubious but chatGPT said it was ok
     Eigen::VectorXd logvar = l_inputs; 
     Eigen::VectorXd mu = m_layers.back().GetWeightedSums();
     Eigen::VectorXd eps = Math::GenGaussianVector(mu.size(), 0, 1);
@@ -42,10 +41,11 @@ QParams Encoder::Encode(const Eigen::MatrixXd& inputs){
 // }
 
 void Encoder::Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& target, 
-    std::vector<Eigen::VectorXd> decoderError, std::vector<QParams> qParams, TrainingSettings settings, int epoch)
+    std::vector<Eigen::VectorXd> decoderError, std::vector<QParams> qParams, TrainingSettings settings, int epoch, double klWeight) //Not sure I want klWeight here
 {
-    
 
+    //Two sets of gradients, one for reconstruction error, one for KL divergence
+    //Every index in the vector is the gradient for that layer
     std::vector<Eigen::MatrixXd> MSEweightGradients;
     std::vector<Eigen::VectorXd> MSEbiasGradients;
 
@@ -60,20 +60,23 @@ void Encoder::Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd
         KLbiasGradients.push_back(Eigen::VectorXd::Zero(m_layers[i].GetBiases().rows()));
     }
 
-    Eigen::VectorXd outputErrorRC;
-    Eigen::VectorXd outputErrorDL;
-
+    //Reconstruction and Divergence error terms to be baclpropagated
 
 for(size_t i = 0; i < inputs.cols(); i++){
     #pragma omp critical
     {
         Encode(inputs.col(i));
     }
-    for(size_t layer = m_layers.size() - 1; layer > 0; layer--)
-    {
-        if(layer == m_layers.size() - 1){
-            Eigen::VectorXd variance = Math::UndoLog(qParams[i].logVar);
 
+    Eigen::VectorXd outputErrorRC;
+    Eigen::VectorXd outputErrorDL;
+
+   for(size_t layer = m_layers.size() - 1; layer > 0; layer--)
+    {
+        //Output layer calculations are different than the rest of the layers
+        if(layer == m_layers.size() - 1){
+            //Math here is dubious, probably incorrect
+            Eigen::VectorXd variance = Math::UndoLog(qParams[i].logVar);
             Eigen::VectorXd halfLogVariance = qParams[i].logVar * 0.5; 
             Eigen::VectorXd e_halfLog = halfLogVariance.array().exp().matrix();
             Layer& outputLayer = m_layers[m_layers.size() - 1];
@@ -137,11 +140,20 @@ for(size_t i = 0; i < inputs.cols(); i++){
         biasGradients.push_back(klWeight * KLbiasGradients[i] + MSEbiasGradients[i]);
     }
 
-    for(size_t layerIndex = 1; layerIndex < m_layers.size(); layerIndex++){
-        weightGradients[layerIndex] /= inputs.cols();
-        biasGradients[layerIndex] /= inputs.cols();
+    UpdateParameters(weightGradients, biasGradients, settings, epoch);
 
-        //https://arxiv.org/abs/1412.6980
+}
+
+
+void Encoder::UpdateParameters(const std::vector<Eigen::MatrixXd>& weightGradients, const std::vector<Eigen::VectorXd>& biasGradients, const TrainingSettings& settings, int epoch){
+    #pragma omp parallel for
+    for(size_t layerIndex = 1; layerIndex < m_layers.size(); layerIndex++){
+        if(epoch == 0)
+        {
+            m_layers[layerIndex].SetWeights(m_layers[layerIndex].GetWeights() - settings.learningRate * weightGradients[layerIndex]);
+            m_layers[layerIndex].SetBiases(m_layers[layerIndex].GetBiases() - settings.learningRate * biasGradients[layerIndex]);
+        }
+       //https://arxiv.org/abs/1412.6980
 
         if(epoch == 0)
         {
@@ -179,4 +191,3 @@ for(size_t i = 0; i < inputs.cols(); i++){
 
     }
 }
-

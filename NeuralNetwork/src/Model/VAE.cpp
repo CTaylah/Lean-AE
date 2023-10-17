@@ -7,12 +7,16 @@ Eigen::VectorXd VAE::FeedForward(const Eigen::VectorXd& inputs){
     return m_decoder.Decode(latent);
 }
 
+Eigen::VectorXd VAE::Decode(const Eigen::VectorXd& input){
+    return m_decoder.Decode(input);
+}
+
 Eigen::VectorXd VAE::CalculateLatent(const QParams& qParams){
     return qParams.mu + (qParams.eps.array() * qParams.logVar.array().exp().sqrt()).matrix();
 }
 
 void VAE::Backpropagate(const Eigen::MatrixXd& inputs, TrainingSettings settings, 
-    double& cost, double epoch)
+    double& cost, double epoch, double klWeight)
 {
     std::vector<QParams> qParams(inputs.cols());
     Eigen::MatrixXd latents = Eigen::MatrixXd::Zero(m_latentSize, inputs.cols());
@@ -23,7 +27,7 @@ void VAE::Backpropagate(const Eigen::MatrixXd& inputs, TrainingSettings settings
     }
     
     std::vector<Eigen::VectorXd> decoderError = m_decoder.Backpropagate(latents, inputs, settings, epoch);
-    m_encoder.Backpropagate(inputs, inputs, decoderError, qParams, settings, epoch);
+    m_encoder.Backpropagate(inputs, inputs, decoderError, qParams, settings, epoch, klWeight);
 
 
     Eigen::VectorXd prediction = FeedForward(inputs);

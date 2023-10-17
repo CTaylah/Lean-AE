@@ -13,13 +13,19 @@ class Encoder
 {
     public:
         Encoder(std::vector<unsigned int> layers);
+
         void Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& target, std::vector<Eigen::VectorXd> decoderError, std::vector<QParams> qParams, 
-            TrainingSettings settings, int epoch);
+            TrainingSettings settings, int epoch, double klWeight);
+
         QParams Encode(const Eigen::MatrixXd& input);
     private:
         std::vector<Layer> m_layers;
-        struct MomentGradients{
+        
+        //Adam update
+        void UpdateParameters(const std::vector<Eigen::MatrixXd>& weightGradients, const std::vector<Eigen::VectorXd>& biasGradients, 
+            const TrainingSettings& settings, int epoch);
 
+        struct MomentGradients{
         std::vector<Eigen::MatrixXd> m_w;
         std::vector<Eigen::VectorXd> m_b; 
 
