@@ -18,15 +18,15 @@ Encoder::Encoder(std::vector<unsigned int> topology)
     }
 }
 
-QParams Encoder::Encode(const Eigen::MatrixXd& inputs){
+QParams Encoder::Encode(const Eigen::VectorXd& inputs){
     Eigen::VectorXd l_inputs = inputs;
 
     for(size_t i = 0; i < m_layers.size(); i++){
         l_inputs = m_layers[i].FeedForward(l_inputs);
     }
 
-    //Dubious but chatGPT said it was ok
     Eigen::VectorXd logvar = l_inputs; 
+    //Dubious but chatGPT said it was ok
     Eigen::VectorXd mu = m_layers.back().GetWeightedSums();
     Eigen::VectorXd eps = Math::GenGaussianVector(mu.size(), 0, 1);
     return QParams{mu, logvar, eps};
@@ -40,8 +40,8 @@ QParams Encoder::Encode(const Eigen::MatrixXd& inputs){
 //     return qParams;
 // }
 
-void Encoder::Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& target, 
-    std::vector<Eigen::VectorXd> decoderError, std::vector<QParams> qParams, TrainingSettings settings, int epoch, double klWeight) //Not sure I want klWeight here
+void Encoder::Backpropagate(const Eigen::MatrixXd& inputs, std::vector<Eigen::VectorXd> decoderError, std::vector<QParams> qParams, 
+    TrainingSettings settings, int epoch, double KLweight, double MSEweight) //Not sure I want klWeight here
 {
 
     //Two sets of gradients, one for reconstruction error, one for KL divergence
@@ -60,7 +60,6 @@ void Encoder::Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd
         KLbiasGradients.push_back(Eigen::VectorXd::Zero(m_layers[i].GetBiases().rows()));
     }
 
-    //Reconstruction and Divergence error terms to be baclpropagated
 
 for(size_t i = 0; i < inputs.cols(); i++){
     #pragma omp critical
@@ -100,7 +99,6 @@ for(size_t i = 0; i < inputs.cols(); i++){
 
             KLweightGradients[layer] += outputWeightGradientsDL;
             KLbiasGradients[layer] += outputErrorDL;
-
             
             continue;
         }
@@ -131,13 +129,10 @@ for(size_t i = 0; i < inputs.cols(); i++){
     std::vector<Eigen::MatrixXd> weightGradients;
     std::vector<Eigen::VectorXd> biasGradients;
 
-    double klWeight = 0.000;
-    if(epoch > 90)
-        klWeight = 0.0001 * (epoch - 100);
     for(size_t i = 0; i < MSEweightGradients.size(); i++)
     {
-        weightGradients.push_back(klWeight * KLweightGradients[i] + MSEweightGradients[i]);
-        biasGradients.push_back(klWeight * KLbiasGradients[i] + MSEbiasGradients[i]);
+        weightGradients.push_back(KLweight * KLweightGradients[i] + MSEweight * MSEweightGradients[i]);
+        biasGradients.push_back(KLweight * KLbiasGradients[i] + MSEweight * MSEbiasGradients[i]);
     }
 
     UpdateParameters(weightGradients, biasGradients, settings, epoch);

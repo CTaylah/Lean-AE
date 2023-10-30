@@ -10,7 +10,7 @@
 int main(int argc, char** argv){
 
     srand(time(NULL));
-    int num_threads = 2;
+    int num_threads = 1;
     omp_set_num_threads(num_threads);
 
     Eigen::MatrixXi examples(784, 60000);
@@ -28,25 +28,17 @@ int main(int argc, char** argv){
     examplesDouble = examplesDouble / 255.0;
 
     //For testing purposes, only using subset of data
-    Eigen::MatrixXd examplesSubset = examplesDouble.block(0, 0, examplesDouble.rows(), 10000);
+    Eigen::MatrixXd examplesSubset = examplesDouble.block(0, 0, examplesDouble.rows(), 100);
 
     // NeuralNetwork network1({784, 162, 784});
-    TrainingSettings settings(10, num_threads * 12, 0.00087);
-
+    TrainingSettings settings(30, 30, 0.00099);
 
     std::vector<unsigned int> encoderTopology = {784, 500, 256};
     std::vector<unsigned int> decoderTopology = {256, 500, 784};
     VAE vae(encoderTopology, decoderTopology);
-    double cost;
-    double klWeight = 0;
-    for(int epoch = 0; epoch < 180; epoch++){
-        for(int i = 0; i < examplesSubset.cols(); i++)
-        {
-            vae.Backpropagate(examplesSubset.col(i), settings, cost, epoch, klWeight);
-        }
-        std::cout << epoch << std::endl;
-        std::cout << cost << std::endl;
-    }
+
+    vae.Train(settings, examplesSubset, true);
+
 
     Eigen::VectorXd input = examplesSubset.col(0);
     Eigen::VectorXd prediction = vae.FeedForward(input);

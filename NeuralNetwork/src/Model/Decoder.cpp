@@ -62,18 +62,17 @@ std::vector<Eigen::VectorXd> Decoder::Backpropagate(const Eigen::MatrixXd& laten
             if(j == m_layers.size() - 1){
                 Layer& outputLayer = m_layers[m_layers.size() - 1];
                 Eigen::VectorXd dRC_dx_hat = (outputLayer.GetActivations() - targets.col(i)); 
-                outputError = Math::LeakyReLUDerivative(outputLayer.GetWeightedSums()).cwiseProduct(dRC_dx_hat);
+                outputError = m_layers[j].ActivationDerivative(outputLayer.GetWeightedSums()).cwiseProduct(dRC_dx_hat);
                 Eigen::MatrixXd outputWeightGradients = outputError * m_layers[m_layers.size() - 2].GetActivations().transpose();
 
                 weightGradientsThreaded[omp_get_thread_num()][j] += outputWeightGradients;
                 biasGradientsThreaded[omp_get_thread_num()][j] += outputError;
-                
                 continue;
             }
 
             Layer& hiddenLayer = m_layers[j];
             Layer& nextLayer = m_layers[j+1];
-            Eigen::VectorXd hiddenError = Math::LeakyReLUDerivative(hiddenLayer.GetWeightedSums()).cwiseProduct(nextLayer.GetWeights().transpose() * outputError);
+            Eigen::VectorXd hiddenError = m_layers[j].ActivationDerivative(hiddenLayer.GetWeightedSums()).cwiseProduct(nextLayer.GetWeights().transpose() * outputError);
 
             Eigen::MatrixXd hiddenWeightGradients = hiddenError * m_layers[j-1].GetActivations().transpose();
             Eigen::VectorXd hiddenBiasGradients = hiddenError;
@@ -112,7 +111,8 @@ void Decoder::UpdateParameters(const std::vector<Eigen::MatrixXd>& weightGradien
             m_layers[layerIndex].SetWeights(m_layers[layerIndex].GetWeights() - settings.learningRate * weightGradients[layerIndex]);
             m_layers[layerIndex].SetBiases(m_layers[layerIndex].GetBiases() - settings.learningRate * biasGradients[layerIndex]);
         }
-       //https://arxiv.org/abs/1412.6980
+
+       //https://arxiv.org/abs/1412.6980 adam paper
 
         if(epoch == 0)
         {

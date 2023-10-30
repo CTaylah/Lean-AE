@@ -177,6 +177,4 @@ void NeuralNetwork::BackpropagateBatch(const Eigen::MatrixXd& inputs, const Eige
     }
     miniBatchCost /= inputs.cols();
     cost += miniBatchCost;
-
-    
 }

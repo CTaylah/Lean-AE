@@ -14,10 +14,10 @@ class Encoder
     public:
         Encoder(std::vector<unsigned int> layers);
 
-        void Backpropagate(const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& target, std::vector<Eigen::VectorXd> decoderError, std::vector<QParams> qParams, 
-            TrainingSettings settings, int epoch, double klWeight);
+        void Backpropagate(const Eigen::MatrixXd& inputs,  std::vector<Eigen::VectorXd> decoderError, std::vector<QParams> qParams, 
+            TrainingSettings settings, int epoch, double KLweight, double MSEweight);
 
-        QParams Encode(const Eigen::MatrixXd& input);
+        QParams Encode(const Eigen::VectorXd& input);
     private:
         std::vector<Layer> m_layers;
         

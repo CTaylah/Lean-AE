@@ -19,14 +19,14 @@ class VAE
                 m_latentSize = encoderLayers.back();
                 }
 
-        void Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, const Eigen::MatrixXd& targets, bool verbose=false);
+        void Train(TrainingSettings settings, const Eigen::MatrixXd& inputs, bool verbose=false);
         
         Eigen::VectorXd Decode(const Eigen::VectorXd& input);
 
         Eigen::VectorXd FeedForward(const Eigen::VectorXd& inputs);
 
         void Backpropagate(const Eigen::MatrixXd& inputs, TrainingSettings settings, 
-            double& cost, double epoch, double klWeight);
+            double& cost, int epoch, double KLweight, double MSEweight);
 
         void BackpropagateBatch(const Eigen::VectorXd& inputs, TrainingSettings settings, 
             double& cost, double epoch);
